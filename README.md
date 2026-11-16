@@ -1,6 +1,6 @@
-# python-learn
+# Python Prep (IMC)
 
-My preparation notes and practice projects for a Strategy Reliability Engineering internship: modern Python tooling, Kubernetes and core Python.
+Preparation notes and practice projects on modern Python tooling, Kubernetes and core Python.
 
 ## Contents
 

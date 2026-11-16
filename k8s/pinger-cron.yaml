@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pinger-cron
+spec:
+  schedule: "*/5 * * * *"           # every 5 minutes
+  concurrencyPolicy: Forbid         # skip a run if the previous one is still going
+  successfulJobsHistoryLimit: 3     # keep the last 3 successful Jobs
+  failedJobsHistoryLimit: 3         # keep the last 3 failed Jobs
+  jobTemplate:
+    spec:
+      backoffLimit: 2               # Job level: 1 try + up to 2 retries
+      template:
+        spec:
+          restartPolicy: Never      # Pod level: each retry is a new Pod
+          containers:
+            - name: pinger
+              image: pinger:0.1.0
+              # arguments added after the image's ENTRYPOINT
+              args: ["http://kubernetes-bootcamp:8080", "https://www.google.com"]

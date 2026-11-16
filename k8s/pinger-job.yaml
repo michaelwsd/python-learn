@@ -1,0 +1,14 @@
+apiVersion: batch/v1 
+kind: Job 
+metadata:
+  name: pinger-job
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never 
+      containers: 
+      - name: pinger 
+        image: pinger:0.1.0
+        # arguments added after the image's ENTRYPOINT
+        args: ["http://kubernetes-bootcamp:8080", "https://www.google.com"] 
