@@ -1,0 +1,18 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Jupyter / Anaconda
+.ipynb_checkpoints/
+anaconda_projects/
+
+# OS / editor
+.DS_Store
+.vscode/

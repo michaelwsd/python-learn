@@ -1,0 +1,39 @@
+{
+    "workbench.colorTheme": "Kanagawa Dragon",
+    "chat.tips.enabled": false,
+    "workbench.secondarySideBar.defaultVisibility": "hidden",
+    "claudeCode.preferredLocation": "panel",
+    "workbench.startupEditor": "none",
+    "terminal.integrated.initialHint": false,
+    "security.workspace.trust.untrustedFiles": "open",
+    "workbench.activityBar.location": "top",
+    "python.terminal.useEnvFile": true,
+    "explorer.confirmDelete": false,
+    "editor.stickyScroll.enabled": false,
+    "explorer.confirmDragAndDrop": false,
+    "explorer.confirmPasteNative": false,
+    "workbench.editor.tabActionCloseVisibility": false,
+    "workbench.editor.enablePreview": false,
+    "remote.SSH.remotePlatform": {
+        "*.gitpod.io": "linux"
+    },
+    "sqldeveloper.datagrid.fontFamily": "Menlo, Monaco, 'Courier New', monospace",
+    "sqldeveloper.telemetry.enabled": false,
+    "workbench.editor.empty.hint": "hidden",
+    "chat.disableAIFeatures": true,
+    "editor.minimap.enabled": false,
+    "editor.cursorSmoothCaretAnimation": "on",
+    "editor.detectIndentation": false,
+    "workbench.editorAssociations": {
+        "*.pdf": "latex-workshop-pdf-hook"
+    },
+    "workbench.editor.showTabs": "none",
+    "update.showReleaseNotes": false,
+    "terminal.integrated.stickyScroll.enabled": false,
+    "redhat.telemetry.enabled": true,
+    "git.openRepositoryInParentFolders": "never",
+    "workbench.browser.openLocalhostLinks": false,
+    "terminal.integrated.enableMultiLinePasteWarning": "never",
+    "git.confirmSync": false,
+    "claudeCode.hideOnboarding": true
+}

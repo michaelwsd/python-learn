@@ -1,0 +1,1333 @@
+<title>Kubernetes From the Ground Up</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky sidebar grouped into three parts (A runs, B declared, C control plane) + one reading column.
+   A map of the three groups opens the page; each part has a divider, then sections of header, diagram, notes, handoff. */
+:root {
+  --bg: #F1F5F4;
+  --surface: #FFFFFF;
+  --sunk: #E7EEEC;
+  --ink: #12201F;
+  --muted: #566A69;
+  --line: #CCD9D6;
+  --wl: #0B6A72;        /* Part A: where things run */
+  --wl-soft: #DAECEC;
+  --obj: #1F5FAE;       /* Part B: objects you declare */
+  --obj-soft: #E0EAF7;
+  --cp: #7A3DAE;        /* Part C: control plane */
+  --cp-soft: #F0E6F8;
+  --warn: #B0551A;      /* problems, failures */
+  --warn-soft: #F7E5D6;
+  --ok: #2B7848;
+  --ok-soft: #DCEFE2;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1617; --surface: #152022; --sunk: #1B2A2C; --ink: #E2ECEA; --muted: #93A7A5; --line: #2B3D3F;
+    --wl: #52C4CB; --wl-soft: #173638; --obj: #82B0F2; --obj-soft: #1A2A40; --cp: #CD9BF2; --cp-soft: #2D1F3A;
+    --warn: #EFA066; --warn-soft: #3A2616; --ok: #6DC892; --ok-soft: #173323;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1617; --surface: #152022; --sunk: #1B2A2C; --ink: #E2ECEA; --muted: #93A7A5; --line: #2B3D3F;
+  --wl: #52C4CB; --wl-soft: #173638; --obj: #82B0F2; --obj-soft: #1A2A40; --cp: #CD9BF2; --cp-soft: #2D1F3A;
+  --warn: #EFA066; --warn-soft: #3A2616; --ok: #6DC892; --ok-soft: #173323;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition: none !important; animation: none !important; } }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+code, pre, .mono { font-family: var(--f-mono); font-size: 0.82em; }
+code { background: var(--sunk); padding: 0.08em 0.35em; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.12; }
+p { margin: 0; }
+a { color: var(--wl); }
+:focus-visible { outline: 2px solid var(--wl); outline-offset: 2px; border-radius: 4px; }
+
+.pa { --part: var(--wl); --part-soft: var(--wl-soft); }
+.pb { --part: var(--obj); --part-soft: var(--obj-soft); }
+.pc { --part: var(--cp); --part-soft: var(--cp-soft); }
+
+.shell { display: grid; grid-template-columns: 14.5rem minmax(0, 50rem); gap: 3.5rem; justify-content: center; padding-block: 2.5rem 5rem; }
+
+/* ---------- sidebar ---------- */
+.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 1.5rem); align-self: start; display: flex; flex-direction: column; gap: 0.1rem; max-height: calc(100vh - 3rem); overflow-y: auto; }
+.toc a { display: grid; grid-template-columns: 1.9rem 1fr; align-items: baseline; text-decoration: none; color: var(--muted); padding: 0.28rem 0.6rem; border-radius: 6px; font-size: 0.93rem; line-height: 1.3; }
+.toc a span { font: 0.72rem var(--f-mono); }
+.toc a:hover { color: var(--ink); background: var(--sunk); }
+.toc a.on { color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.toc a.on span { color: var(--part, var(--wl)); font-weight: 600; }
+.toc .toc-group { display: flex; gap: 0.5rem; align-items: center; font: 600 0.68rem/1.2 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--part, var(--muted)); padding: 0.9rem 0.6rem 0.3rem; text-decoration: none; }
+.toc .toc-group:first-child { padding-top: 0; }
+.toc .toc-group i { font-style: normal; display: inline-grid; place-items: center; width: 1.2rem; height: 1.2rem; border-radius: 4px; border: 1.5px solid currentColor; font-size: 0.68rem; }
+
+@media (max-width: 960px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; padding-top: 0; }
+  .toc { top: env(safe-area-inset-top, 0px); z-index: 5; flex-direction: row; overflow-x: auto; overflow-y: hidden; max-height: none; gap: 0.25rem; background: var(--bg); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding: 0.6rem max(16px, env(safe-area-inset-left, 0px)); border-bottom: 1px solid var(--line); scrollbar-width: none; }
+  .toc::-webkit-scrollbar { display: none; }
+  .toc .toc-group { display: none; }
+  .toc a { display: flex; gap: 0.35rem; white-space: nowrap; flex: none; }
+}
+
+main { display: flex; flex-direction: column; gap: 4.5rem; min-width: 0; }
+
+/* ---------- hero ---------- */
+.hero { display: flex; flex-direction: column; gap: 1.1rem; padding-top: 0.5rem; }
+.eyebrow { font: 600 0.75rem/1 var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--wl); }
+.hero h1 { font-size: clamp(2.3rem, 5.5vw, 3.6rem); font-weight: 750; letter-spacing: -0.02em; }
+.hero .lede { font-size: 1.2rem; color: var(--muted); max-width: 40rem; }
+.hero .lede b { color: var(--ink); font-weight: 600; }
+.hero .lede .ka { color: var(--wl); } .hero .lede .kb { color: var(--obj); } .hero .lede .kc { color: var(--cp); }
+
+/* ---------- the map ---------- */
+.map { display: flex; flex-direction: column; }
+.band { border: 1.5px solid var(--part); background: var(--part-soft); border-radius: 14px; padding: 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+.band-head { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr) auto; gap: 0.85rem; align-items: start; }
+.band-tag { font: 750 1.5rem/1 var(--f-display); color: var(--part); width: 2.6rem; height: 2.6rem; border-radius: 9px; background: var(--surface); border: 1.5px solid var(--part); display: grid; place-items: center; }
+.band-head h3 { font-size: 1.2rem; font-weight: 750; }
+.band-head h3 small { font: 600 0.7rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--part); display: block; margin-bottom: 0.2rem; }
+.band-head p { font-size: 0.93rem; color: var(--muted); margin-top: 0.2rem; }
+.band-head .go { font: 600 0.75rem var(--f-mono); color: var(--part); text-decoration: none; white-space: nowrap; padding-top: 0.2rem; }
+.band-head .go:hover { text-decoration: underline; }
+@media (max-width: 560px) { .band-head { grid-template-columns: 2.6rem minmax(0, 1fr); } .band-head .go { grid-column: 2; } }
+.band-body { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.band-body .pill { text-decoration: none; }
+.conn { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.8rem; align-items: center; padding: 0.3rem 0.5rem; font: 0.74rem/1.35 var(--f-mono); color: var(--muted); }
+.conn .down { text-align: right; }
+.conn .rail { width: 2px; height: 2.4rem; background: var(--line); position: relative; }
+.conn .rail::before, .conn .rail::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); border: 5px solid transparent; }
+.conn .rail::before { bottom: -2px; border-top-color: var(--muted); border-bottom: 0; }
+.conn .rail::after { top: -2px; border-bottom-color: var(--muted); border-top: 0; }
+.conn b { color: var(--ink); font-weight: 600; }
+.objs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; width: 100%; }
+@media (max-width: 640px) { .objs { grid-template-columns: minmax(0, 1fr); } }
+.og { background: var(--surface); border-radius: 9px; padding: 0.55rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.obj { font: 600 0.78rem var(--f-mono); color: var(--obj); border: 1.5px solid var(--obj); border-radius: 6px; padding: 0.3rem 0.5rem; text-decoration: none; background: var(--surface); position: relative; }
+.obj::after { content: ""; position: absolute; top: -1.5px; right: -1.5px; width: 0.5rem; height: 0.5rem; background: linear-gradient(225deg, var(--obj-soft) 50%, var(--obj) 50%); border-radius: 0 5px 0 0; }
+.obj:hover { background: var(--obj-soft); }
+.og .rel { font: 0.68rem var(--f-mono); color: var(--muted); }
+.sel-line { font: 0.78rem var(--f-mono); color: var(--muted); width: 100%; }
+.sel-line code { color: var(--obj); background: var(--surface); }
+.nh { display: flex; gap: 0.6rem; align-items: stretch; border: 1.5px solid var(--wl); border-radius: 9px; padding: 0.45rem 0.45rem 0.45rem 0.6rem; background: var(--surface); flex: 1; min-width: 0; }
+.nh.alt { background: var(--wl-soft); }
+.nh.dash { border-style: dashed; }
+.nh > a, .nh > span.l { font: 600 0.72rem/1.25 var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--wl); align-self: center; width: 5.2rem; flex: none; text-decoration: none; }
+.nh > a:hover { text-decoration: underline; }
+.nh > a small, .nh > span.l small { display: block; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); }
+.nh .core { font: 0.78rem var(--f-mono); align-self: center; color: var(--ink); padding: 0.3rem 0; }
+@media (max-width: 640px) {
+  .nh { flex-direction: column; gap: 0.4rem; }
+  .nh > a, .nh > span.l { align-self: flex-start; width: auto; }
+  .nh > a small, .nh > span.l small { display: inline; margin-left: 0.4rem; }
+}
+.map-note { font-size: 0.93rem; color: var(--muted); margin-top: 1rem; max-width: 44rem; }
+.map-note b { color: var(--ink); }
+
+/* ---------- part dividers ---------- */
+.part { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr); gap: 1.2rem; padding: 1.3rem 1.3rem 1.4rem; border-radius: 14px; background: var(--part-soft); border: 1.5px solid var(--part); }
+@media (max-width: 560px) { .part { grid-template-columns: minmax(0, 1fr); } }
+.part-tag { font: 750 3rem/1 var(--f-display); color: var(--part); }
+.part .num { color: var(--part); }
+.part h2 { font-size: clamp(1.9rem, 4vw, 2.5rem); font-weight: 750; letter-spacing: -0.015em; margin: 0.35rem 0 0.6rem; }
+.part p { max-width: 42rem; }
+.part p + p { margin-top: 0.6rem; }
+.part .shape { font: 0.82rem var(--f-mono); background: var(--surface); border-radius: 8px; padding: 0.55rem 0.75rem; display: inline-block; margin-top: 0.8rem; color: var(--ink); }
+.part .contains { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.9rem; }
+.part .contains a { font: 600 0.76rem var(--f-mono); color: var(--part); background: var(--surface); border: 1px solid var(--part); padding: 0.2rem 0.55rem; border-radius: 99px; text-decoration: none; }
+.part .contains a:hover { background: var(--part-soft); }
+
+/* ---------- sections ---------- */
+.layer { display: flex; flex-direction: column; gap: 1.25rem; }
+.layer-head { display: flex; flex-direction: column; gap: 0.45rem; }
+.num { font: 600 0.75rem/1 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--part, var(--wl)); }
+.layer-head h2 { font-size: clamp(1.7rem, 3.4vw, 2.2rem); font-weight: 750; letter-spacing: -0.015em; }
+.layer-head .lede { font-size: 1.1rem; color: var(--muted); max-width: 42rem; }
+
+.viz { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.viz-title { font: 600 0.72rem var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.caption { font-size: 0.9rem; color: var(--muted); }
+.scroll-x { overflow-x: auto; }
+
+.points { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.55rem; max-width: 42rem; }
+.points li { display: grid; grid-template-columns: 0.9rem 1fr; gap: 0.5rem; }
+.points li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--part, var(--wl)); margin-top: 0.62rem; }
+.points b { font-weight: 700; }
+
+.handoff { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; align-items: baseline; padding-top: 1rem; border-top: 1px dashed var(--line); max-width: 42rem; }
+.handoff .tag-warn { font: 600 0.7rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--warn); white-space: nowrap; }
+.handoff .tag-next { font: 600 0.7rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.handoff a { font-weight: 600; text-decoration: none; white-space: nowrap; }
+.handoff a:hover { text-decoration: underline; }
+@media (max-width: 520px) { .handoff { grid-template-columns: 1fr; } }
+
+details.try { max-width: 42rem; }
+details.try summary { cursor: pointer; font: 600 0.8rem var(--f-mono); color: var(--muted); list-style: none; display: inline-flex; gap: 0.4rem; align-items: center; }
+details.try summary::-webkit-details-marker { display: none; }
+details.try summary::before { content: "+"; display: inline-grid; place-items: center; width: 1.1rem; height: 1.1rem; border: 1px solid var(--line); border-radius: 4px; }
+details.try[open] summary::before { content: "−"; }
+pre.cmd { margin: 0.6rem 0 0; background: var(--sunk); border-radius: 8px; padding: 0.8rem 1rem; overflow-x: auto; line-height: 1.6; }
+pre.cmd .c { color: var(--muted); }
+
+/* ---------- shared diagram parts ---------- */
+.box { border: 1.5px solid var(--line); border-radius: 8px; padding: 0.7rem 0.8rem; background: var(--surface); min-width: 0; }
+.box.wl { border-color: var(--wl); background: var(--wl-soft); }
+.box.cp { border-color: var(--cp); background: var(--cp-soft); }
+.box.obj { border-color: var(--obj); background: var(--obj-soft); }
+.box h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+.small { font-size: 0.88rem; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 0.3rem; font: 600 0.72rem var(--f-mono); padding: 0.18rem 0.5rem; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+.pill.ok { color: var(--ok); background: var(--ok-soft); }
+.pill.warn { color: var(--warn); background: var(--warn-soft); }
+.pill.wl { color: var(--wl); background: var(--wl-soft); }
+.pill.cp { color: var(--cp); background: var(--cp-soft); }
+.pill.obj { color: var(--obj); background: var(--obj-soft); }
+.pill.mut { color: var(--muted); background: var(--sunk); border-color: var(--line); }
+.band .pill { background: var(--surface); }
+.arrow { color: var(--muted); font: 600 0.78rem var(--f-mono); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.1rem; text-align: center; }
+.arrow::after { content: "→"; font-size: 1.3rem; line-height: 1; }
+.btns { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+button { font: 600 0.85rem var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 0.42rem 0.8rem; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--part, var(--wl)); color: var(--part, var(--wl)); }
+button.primary { background: var(--part, var(--wl)); border-color: var(--part, var(--wl)); color: var(--surface); }
+button.primary:hover:not(:disabled) { color: var(--surface); filter: brightness(1.08); }
+button:disabled { opacity: 0.45; cursor: default; }
+.log { font: 0.8rem var(--f-mono); color: var(--muted); min-height: 1.3em; }
+.log b { color: var(--ink); font-weight: 600; }
+
+/* A1 */
+.machines { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+@media (max-width: 560px) { .machines { grid-template-columns: minmax(0, 1fr); } }
+.machine { display: flex; flex-direction: column; gap: 0.6rem; }
+.kv { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; font: 0.85rem var(--f-mono); }
+.kv li { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px dotted var(--line); padding-bottom: 0.2rem; }
+.kv li span { color: var(--muted); }
+.term { font: 0.8rem/1.5 var(--f-mono); background: var(--sunk); border-radius: 6px; padding: 0.55rem 0.7rem; overflow-x: auto; white-space: pre; }
+.term .ok { color: var(--ok); } .term .warn { color: var(--warn); }
+
+/* A2 */
+.flow { display: grid; grid-template-columns: minmax(0, 1.1fr) 3rem minmax(0, 1fr) 3rem minmax(0, 0.9fr); gap: 0.4rem; align-items: center; }
+@media (max-width: 760px) {
+  .flow { grid-template-columns: minmax(0, 1fr); }
+  .flow .arrow { flex-direction: row; gap: 0.5rem; }
+  .flow .arrow::after { content: "↓"; }
+}
+pre.mini { margin: 0; font-size: 0.74rem; line-height: 1.6; background: var(--sunk); border-radius: 6px; padding: 0.55rem 0.65rem; overflow-x: auto; }
+.layers { display: flex; flex-direction: column; gap: 3px; margin-top: 0.4rem; }
+.layers div { font: 0.74rem var(--f-mono); padding: 0.32rem 0.55rem; border-radius: 4px; background: var(--surface); border: 1px solid var(--wl); display: flex; justify-content: space-between; gap: 0.5rem; }
+.layers div small { color: var(--muted); }
+.ctrs { display: flex; flex-direction: column; gap: 0.4rem; }
+.ctr { border: 1.5px solid var(--wl); background: var(--wl-soft); border-radius: 6px; padding: 0.4rem 0.6rem; font: 0.76rem var(--f-mono); display: flex; justify-content: space-between; gap: 0.5rem; }
+.ctr small { color: var(--muted); }
+.registry { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; border-top: 1px dashed var(--line); padding-top: 0.9rem; }
+.analogy { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; align-items: center; font-size: 0.95rem; background: var(--sunk); border-radius: 8px; padding: 0.7rem 0.9rem; }
+.analogy b { font-family: var(--f-display); font-weight: 600; }
+
+/* A3 */
+.podgrid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1.25rem; }
+@media (max-width: 760px) { .podgrid { grid-template-columns: minmax(0, 1fr); } }
+.pod { border: 2px dashed var(--wl); border-radius: 12px; padding: 0.8rem; display: flex; flex-direction: column; gap: 0.7rem; }
+.pod-head { display: flex; flex-wrap: wrap; gap: 0.4rem 0.6rem; align-items: center; font-size: 0.85rem; }
+.pod-ctrs { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0.4rem; align-items: center; }
+.pod-ctrs .ctr { flex-direction: column; gap: 0.1rem; }
+.pod-ctrs .ctr b { font-weight: 600; color: var(--ink); }
+.localhost { font: 0.7rem var(--f-mono); color: var(--wl); text-align: center; }
+.localhost::before { content: "⟷"; display: block; font-size: 1.1rem; line-height: 1; }
+.vol { font: 0.76rem var(--f-mono); text-align: center; padding: 0.4rem; border-radius: 6px; background: var(--sunk); border: 1px solid var(--line); }
+.life { display: flex; flex-direction: column; gap: 0.55rem; }
+.life-row { display: grid; grid-template-columns: minmax(0, 1fr) 1.6rem minmax(0, 1fr); gap: 0.3rem; align-items: center; }
+.mini-pod { border: 1.5px solid var(--wl); border-radius: 8px; padding: 0.45rem 0.55rem; font: 0.74rem/1.45 var(--f-mono); background: var(--surface); }
+.mini-pod.dead { border-color: var(--warn); background: var(--warn-soft); }
+.mini-pod .nm { color: var(--ink); font-weight: 600; display: block; overflow-wrap: anywhere; }
+.mini-pod .ipx { color: var(--muted); }
+.life-row .arrow::after { font-size: 1rem; }
+
+/* A4 */
+.chain { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; font: 0.78rem var(--f-mono); }
+.chain .step { padding: 0.3rem 0.55rem; border-radius: 6px; border: 1px solid var(--line); background: var(--sunk); }
+.chain .step.cp { border-color: var(--cp); background: var(--cp-soft); color: var(--cp); }
+.chain .step.wl { border-color: var(--wl); background: var(--wl-soft); }
+.chain .to { color: var(--muted); }
+.node { border: 2px solid var(--line); border-radius: 12px; padding: 0.9rem; display: flex; flex-direction: column; gap: 0.8rem; background: var(--bg); }
+.node-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; }
+.node-head b { font-family: var(--f-display); font-size: 1.05rem; font-weight: 600; }
+.agents { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+@media (max-width: 640px) { .agents { grid-template-columns: minmax(0, 1fr); } }
+.agents .box h3 { font-family: var(--f-mono); font-size: 0.86rem; }
+.node-pods { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.podchip { font: 0.74rem var(--f-mono); border: 1.5px dashed var(--wl); border-radius: 7px; padding: 0.3rem 0.55rem; background: var(--surface); display: inline-flex; gap: 0.4rem; align-items: center; }
+.podchip i { width: 0.55rem; height: 0.55rem; border-radius: 2px; background: var(--wl); display: inline-block; }
+
+/* A5 */
+.cluster { border: 2px solid var(--ink); border-radius: 14px; padding: 0.9rem; display: flex; flex-direction: column; gap: 0.8rem; }
+.cluster > .ch { font: 600 0.75rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.cpstrip { border: 1.5px solid var(--cp); background: var(--cp-soft); border-radius: 9px; padding: 0.55rem 0.7rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.cpstrip .t { font: 600 0.72rem var(--f-mono); color: var(--cp); margin-right: 0.4rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.cpstrip .pill { background: var(--surface); }
+.nodes3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+@media (max-width: 640px) { .nodes3 { grid-template-columns: minmax(0, 1fr); } }
+.nodes3 .nd { border: 1.5px solid var(--line); border-radius: 9px; padding: 0.55rem; display: flex; flex-direction: column; gap: 0.4rem; background: var(--bg); }
+.nodes3 .nd > span { font: 600 0.74rem var(--f-mono); color: var(--muted); }
+.ns-a { border-style: solid !important; background: var(--wl-soft) !important; }
+.ns-b { border-color: var(--ink) !important; border-style: dotted !important; }
+.ns-b i { background: var(--ink) !important; border-radius: 50% !important; }
+.aside { display: grid; grid-template-columns: auto 1fr; gap: 0.9rem; align-items: center; background: var(--sunk); border-radius: 10px; padding: 0.8rem 0.9rem; }
+.mk { border: 2px solid var(--ink); border-radius: 9px; padding: 0.4rem 0.6rem; font: 0.72rem/1.5 var(--f-mono); text-align: center; }
+.mk .cpx { color: var(--cp); } .mk .wlx { color: var(--wl); }
+
+/* B1 */
+.chips { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; }
+.chips .lbl { font: 600 0.72rem var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-right: 0.3rem; }
+.chip { font: 600 0.8rem var(--f-mono); border-radius: 99px; padding: 0.32rem 0.75rem; }
+.chip[aria-pressed="true"] { background: var(--obj); color: var(--surface); border-color: var(--obj); }
+.chip[aria-pressed="true"]:hover { color: var(--surface); }
+.label-pods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+@media (max-width: 640px) { .label-pods { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.lpod { border: 1.5px solid var(--line); border-radius: 9px; padding: 0.55rem 0.65rem; display: flex; flex-direction: column; gap: 0.4rem; transition: opacity .2s, border-color .2s, background .2s; }
+.lpod .nm { font: 600 0.8rem var(--f-mono); overflow-wrap: anywhere; }
+.lpod .tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.lpod .tags span { font: 0.68rem var(--f-mono); padding: 0.1rem 0.4rem; border-radius: 4px; background: var(--sunk); color: var(--muted); }
+.lpod .tags span.hit { background: var(--obj); color: var(--surface); }
+.lpod.match { border-color: var(--wl); background: var(--wl-soft); }
+.lpod.dim { opacity: 0.45; }
+.result { font: 0.82rem var(--f-mono); color: var(--muted); }
+.result b { color: var(--obj); }
+.objpoint { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.6fr); gap: 0.6rem; align-items: center; }
+@media (max-width: 600px) { .objpoint { grid-template-columns: minmax(0, 1fr); } .objpoint .arrow::after { content: "↓"; } }
+.objpoint pre { margin: 0.35rem 0 0; font-size: 0.74rem; line-height: 1.6; background: var(--surface); border-radius: 6px; padding: 0.45rem 0.6rem; overflow-x: auto; }
+
+/* B2 */
+.rs { border: 1.5px solid var(--obj); border-radius: 10px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.rs-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.4rem; font: 0.78rem var(--f-mono); }
+.rs-head b { color: var(--obj); }
+.counts { display: flex; gap: 1rem; font: 0.78rem var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.counts b { color: var(--ink); font-size: 1rem; }
+.pods { display: flex; flex-wrap: wrap; gap: 0.4rem; min-height: 2.4rem; }
+.p { font: 0.7rem/1.3 var(--f-mono); border: 1.5px solid var(--wl); background: var(--wl-soft); border-radius: 6px; padding: 0.3rem 0.45rem; transition: opacity .3s, transform .3s; }
+.p small { display: block; color: var(--muted); }
+.p.creating { border-style: dashed; background: var(--surface); color: var(--muted); }
+.p.terminating { border-color: var(--warn); background: var(--warn-soft); opacity: 0.7; }
+.dep { border: 2px solid var(--obj); border-radius: 12px; padding: 0.8rem; display: flex; flex-direction: column; gap: 0.7rem; }
+.dep-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.4rem; font: 0.8rem var(--f-mono); }
+.dep-head b { color: var(--obj); }
+.dep-rs { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: 0.6rem; align-items: center; padding: 0.55rem 0.65rem; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); }
+@media (max-width: 480px) { .dep-rs { grid-template-columns: minmax(0, 1fr); } }
+.dep-rs .rsn { font: 0.74rem/1.35 var(--f-mono); }
+.dep-rs .rsn small { color: var(--muted); display: block; }
+.dots { display: flex; gap: 0.35rem; flex-wrap: wrap; min-height: 1.6rem; align-items: center; }
+.dot { width: 1.6rem; height: 1.6rem; border-radius: 6px; border: 1.5px solid; display: inline-block; }
+.dot.v1 { border-color: var(--wl); background: var(--wl); }
+.dot.v2 { border-color: var(--ok); background: var(--ok); }
+.dot.start { background: transparent; border-style: dashed; }
+.dot.sm { width: 0.8rem; height: 0.8rem; border-radius: 3px; vertical-align: -1px; }
+.dot-none { font: 0.72rem var(--f-mono); color: var(--muted); }
+.meters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+.meter { font: 0.76rem var(--f-mono); color: var(--muted); background: var(--sunk); border-radius: 8px; padding: 0.5rem 0.65rem; font-variant-numeric: tabular-nums; }
+.meter b { color: var(--ink); font-size: 1.05rem; }
+.step-text { font-size: 0.95rem; min-height: 3em; }
+.stepno { font: 0.75rem var(--f-mono); color: var(--muted); margin-left: auto; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.85rem; color: var(--muted); }
+
+/* B3 */
+.svc-flow { display: grid; grid-template-columns: minmax(0, 0.9fr) 2.4rem minmax(0, 1.1fr) 2.4rem minmax(0, 1.2fr); gap: 0.4rem; align-items: center; }
+@media (max-width: 760px) {
+  .svc-flow { grid-template-columns: minmax(0, 1fr); }
+  .svc-flow .arrow::after { content: "↓"; }
+}
+.svc { border: 2px solid var(--obj); border-radius: 10px; padding: 0.7rem 0.8rem; background: var(--obj-soft); font: 0.78rem/1.6 var(--f-mono); }
+.svc b { font-family: var(--f-display); font-size: 1rem; font-weight: 600; display: block; margin-bottom: 0.15rem; color: var(--obj); }
+.svc .fixed { color: var(--ok); }
+.svc-pods { display: flex; flex-direction: column; gap: 0.4rem; }
+.svc-pods .p { display: flex; justify-content: space-between; gap: 0.5rem; transition: background .2s, border-color .2s; }
+.svc-pods .p small { display: inline; }
+.svc-pods .p.hit { background: var(--wl); color: var(--surface); }
+.svc-pods .p.hit small { color: var(--surface); }
+.reach { display: flex; flex-direction: column; gap: 0.5rem; }
+.ring { border: 1.5px solid var(--line); border-radius: 10px; padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.45rem; }
+.ring > .rh { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.88rem; }
+.ring > .rh b { font-family: var(--f-mono); font-size: 0.82rem; color: var(--obj); }
+.ring > .rh span { color: var(--muted); }
+.ring.r3 { border-style: dashed; }
+.ring.r1 { border-color: var(--obj); background: var(--obj-soft); }
+
+/* B4 */
+.tl { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 0.75rem 1rem; align-items: center; min-width: 560px; }
+.tl .who { font: 0.78rem/1.35 var(--f-mono); }
+.tl .who small { display: block; color: var(--muted); }
+.track { position: relative; height: 2.1rem; border-radius: 6px; background: var(--sunk); }
+.seg { position: absolute; top: 0.3rem; bottom: 0.3rem; border-radius: 4px; font: 600 0.66rem var(--f-mono); display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; padding: 0 0.3rem; border: 1.5px solid; }
+.seg.run { background: var(--wl-soft); border-color: var(--wl); color: var(--wl); }
+.seg.fail { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
+.seg.okk { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.seg.flag { background: transparent; border: 0; color: var(--muted); justify-content: flex-start; }
+.axis { display: flex; justify-content: space-between; font: 0.68rem var(--f-mono); color: var(--muted); grid-column: 2; }
+.tick { position: absolute; top: -0.1rem; bottom: -0.1rem; width: 0; border-left: 1.5px dashed var(--obj); }
+
+/* C1 */
+svg.hub { width: 100%; min-width: 560px; height: auto; display: block; }
+.hub .b { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.hub .b.cp { fill: var(--cp-soft); stroke: var(--cp); }
+.hub .b.api { fill: var(--cp); stroke: var(--cp); }
+.hub .b.wl { fill: var(--wl-soft); stroke: var(--wl); }
+.hub .bound { fill: none; stroke: var(--cp); stroke-width: 1.2; stroke-dasharray: 5 5; opacity: 0.6; }
+.hub text { font-family: var(--f-mono); font-size: 13px; fill: var(--ink); }
+.hub text.t-api { fill: var(--surface); font-weight: 600; font-size: 14px; }
+.hub text.sub { font-size: 11px; fill: var(--muted); }
+.hub text.lab { font-size: 10.5px; fill: var(--muted); letter-spacing: 0.08em; }
+.hub .ln { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+.hub .ln.db { stroke: var(--cp); stroke-width: 2; }
+.hub .ah { fill: var(--muted); }
+.hub .ah.db { fill: var(--cp); }
+.comp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+@media (max-width: 600px) { .comp { grid-template-columns: minmax(0, 1fr); } }
+.comp .box h3 { font-family: var(--f-mono); font-size: 0.86rem; color: var(--cp); }
+.ctl-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 480px; }
+.ctl-table th { text-align: left; font: 600 0.68rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 0.4rem 0.5rem; border-bottom: 1.5px solid var(--line); }
+.ctl-table td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.ctl-table td:first-child { font: 600 0.8rem var(--f-mono); color: var(--obj); white-space: nowrap; }
+.ctl-table td:nth-child(2) { font: 0.8rem var(--f-mono); color: var(--cp); white-space: nowrap; }
+.loop { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; position: relative; }
+@media (max-width: 600px) { .loop { grid-template-columns: minmax(0, 1fr); } }
+.loop .box { display: flex; flex-direction: column; gap: 0.2rem; }
+.loop .box .k { font: 600 0.7rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cp); }
+.loop-back { font: 0.76rem var(--f-mono); color: var(--muted); text-align: center; border: 1.5px dashed var(--line); border-top: 0; border-radius: 0 0 10px 10px; padding: 0.35rem; margin-top: -0.2rem; }
+
+/* C2 */
+.spec { display: grid; grid-template-columns: minmax(0, 1fr) 7rem minmax(0, 1fr); gap: 0.5rem; align-items: center; }
+@media (max-width: 640px) { .spec { grid-template-columns: minmax(0, 1fr); } .spec .arrow::after { content: "↓"; } }
+.spec pre { margin: 0.4rem 0 0; font-size: 0.78rem; line-height: 1.65; background: var(--surface); padding: 0.55rem 0.7rem; border-radius: 6px; overflow-x: auto; }
+.spec .gap { color: var(--warn); }
+
+/* C3 */
+.e2e { min-width: 680px; display: flex; flex-direction: column; gap: 0.2rem; }
+.lanes, .erow { display: grid; grid-template-columns: 2rem repeat(8, minmax(0, 1fr)); align-items: center; }
+.lanes div { font: 600 0.66rem/1.2 var(--f-mono); text-align: center; padding: 0.4rem 0.15rem; border-radius: 6px; }
+.lanes .cp { color: var(--cp); background: var(--cp-soft); }
+.lanes .wl { color: var(--wl); background: var(--wl-soft); }
+.lanes .you { color: var(--ink); background: var(--sunk); }
+.lanes { gap: 0.25rem; margin-bottom: 0.25rem; }
+.estep { border-radius: 8px; padding: 0.35rem 0; transition: background .2s, opacity .2s; cursor: pointer; }
+.estep:hover { background: var(--sunk); }
+.estep.on { background: var(--sunk); box-shadow: inset 3px 0 0 var(--cp); }
+.erow { gap: 0.25rem; position: relative; height: 1.4rem; }
+.erow .sn { grid-column: 1; grid-row: 1; font: 600 0.72rem var(--f-mono); color: var(--muted); text-align: center; }
+.erow .bar { height: 3px; background: var(--line); border-radius: 2px; align-self: center; margin-inline: 1.2rem; }
+.erow .act { justify-self: center; width: 0.9rem; height: 0.9rem; border-radius: 50%; background: var(--wl); box-shadow: 0 0 0 3px var(--surface); z-index: 1; }
+.erow .act.cp { background: var(--cp); }
+.erow .act.you { background: var(--ink); }
+.estep.on .bar { background: var(--cp); }
+.etext { padding: 0.15rem 0.6rem 0.2rem 2.25rem; font-size: 0.93rem; }
+.etext code { font-size: 0.78rem; }
+.etext .obj-tag { font: 600 0.72rem var(--f-mono); color: var(--obj); }
+
+/* reference */
+.ref { width: 100%; border-collapse: collapse; font-size: 0.93rem; min-width: 600px; }
+.ref th { text-align: left; font: 600 0.7rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 0.5rem 0.6rem; border-bottom: 1.5px solid var(--line); }
+.ref td { padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.ref td:first-child { font-weight: 700; white-space: nowrap; }
+.ref td:nth-child(2) { white-space: nowrap; }
+.ref td code { white-space: nowrap; }
+.ref tr.grp td { font: 600 0.7rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--part); padding-top: 1rem; border-bottom: 1.5px solid var(--part); }
+footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 1.2rem; }
+</style>
+
+<div class="shell">
+  <nav class="toc" aria-label="Sections">
+    <a class="toc-group" href="#top">Start</a>
+    <a href="#top"><span>00</span>Overview</a>
+    <a href="#map"><span>◫</span>The map</a>
+    <a class="toc-group pa" href="#part-a"><i>A</i>Where things run</a>
+    <a class="pa" href="#process"><span>A1</span>Process</a>
+    <a class="pa" href="#image"><span>A2</span>Image &amp; container</a>
+    <a class="pa" href="#pod"><span>A3</span>Pod</a>
+    <a class="pa" href="#node"><span>A4</span>Node</a>
+    <a class="pa" href="#cluster"><span>A5</span>Cluster &amp; Namespace</a>
+    <a class="toc-group pb" href="#part-b"><i>B</i>What you declare</a>
+    <a class="pb" href="#labels"><span>B1</span>Labels &amp; selectors</a>
+    <a class="pb" href="#deployment"><span>B2</span>ReplicaSet &amp; Deployment</a>
+    <a class="pb" href="#service"><span>B3</span>Service</a>
+    <a class="pb" href="#jobs"><span>B4</span>Job &amp; CronJob</a>
+    <a class="toc-group pc" href="#part-c"><i>C</i>What makes it happen</a>
+    <a class="pc" href="#control-plane"><span>C1</span>Control plane</a>
+    <a class="pc" href="#desired"><span>C2</span>Desired state</a>
+    <a class="pc" href="#e2e"><span>C3</span>End to end</a>
+    <a class="toc-group" href="#ref">Reference</a>
+    <a href="#ref"><span>≡</span>Quick reference</a>
+  </nav>
+
+  <main>
+    <!-- ================= HERO ================= -->
+    <section class="hero" id="top">
+      <p class="eyebrow">IMC prep · Module 2 · Kubernetes</p>
+      <h1>Kubernetes from the ground up</h1>
+      <p class="lede">Everything in Kubernetes is one of three kinds of thing: <b class="ka">where your app runs</b>, <b class="kb">the objects you declare</b> about it, and <b class="kc">the control plane</b> that turns those declarations into running containers.</p>
+    </section>
+
+    <!-- ================= MAP ================= -->
+    <section class="layer" id="map">
+      <div class="layer-head">
+        <span class="num">The map</span>
+        <h2>How the three groups fit together</h2>
+        <p class="lede">Read top to bottom to follow the control flow. The page itself is built from the ground up, starting with Part A at the bottom.</p>
+      </div>
+      <div class="map">
+        <div class="band pc">
+          <div class="band-head">
+            <span class="band-tag">C</span>
+            <div><h3><small>What makes it happen</small>Control plane</h3><p>Stores every object and runs a controller for each kind. It's machinery, not a layer.</p></div>
+            <a class="go" href="#part-c">Part C ↓</a>
+          </div>
+          <div class="band-body">
+            <a class="pill cp" href="#control-plane">kube-apiserver</a>
+            <a class="pill cp" href="#control-plane">etcd</a>
+            <a class="pill cp" href="#control-plane">kube-scheduler</a>
+            <a class="pill cp" href="#control-plane">kube-controller-manager</a>
+          </div>
+        </div>
+
+        <div class="conn" aria-hidden="true">
+          <span class="down">controllers <b>read</b> the objects<br>and act on them</span>
+          <span class="rail"></span>
+          <span>status is <b>written back</b><br>to each object</span>
+        </div>
+
+        <div class="band pb">
+          <div class="band-head">
+            <span class="band-tag">B</span>
+            <div><h3><small>What you declare</small>API objects</h3><p>Records you write in YAML. They don't contain Pods. They point at Pods with a label selector.</p></div>
+            <a class="go" href="#part-b">Part B ↓</a>
+          </div>
+          <div class="objs">
+            <div class="og"><a class="obj" href="#deployment">Deployment</a><span class="rel">manages</span><a class="obj" href="#deployment">ReplicaSet</a></div>
+            <div class="og"><a class="obj" href="#jobs">CronJob</a><span class="rel">creates</span><a class="obj" href="#jobs">Job</a></div>
+            <div class="og"><a class="obj" href="#service">Service</a><span class="rel">routes traffic</span></div>
+            <p class="sel-line">Each one finds its Pods by <a href="#labels" style="color:inherit">label selector</a>, e.g. <code>app=web</code></p>
+          </div>
+        </div>
+
+        <div class="conn" aria-hidden="true">
+          <span class="down">Pods are <b>created</b>, <b>deleted</b><br>and <b>routed to</b></span>
+          <span class="rail"></span>
+          <span>kubelet <b>reports</b><br>what is actually running</span>
+        </div>
+
+        <div class="band pa">
+          <div class="band-head">
+            <span class="band-tag">A</span>
+            <div><h3><small>Where things run</small>The physical stack</h3><p>Real machines and processes. Each one runs inside the next.</p></div>
+            <a class="go" href="#part-a">Part A ↓</a>
+          </div>
+          <div class="nh">
+            <a href="#cluster">Cluster<small>A5</small></a>
+            <div class="nh alt">
+              <a href="#node">Node<small>A4</small></a>
+              <div class="nh dash">
+                <a href="#pod">Pod<small>A3</small></a>
+                <div class="nh alt">
+                  <a href="#image">Container<small>A2</small></a>
+                  <div class="nh">
+                    <a href="#process">Process<small>A1</small></a>
+                    <span class="core">python -m pinger</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="map-note"><b>A</b> is where things run, <b>B</b> is what you write, and <b>C</b> makes A match B. You never touch A directly: you write B, and C does the rest.</p>
+    </section>
+
+    <!-- ================= PART A ================= -->
+    <section class="part pa" id="part-a">
+      <div class="part-tag">A</div>
+      <div>
+        <span class="num">Part A</span>
+        <h2>Where things run</h2>
+        <p>The physical stack: real machines and real processes. These are genuine layers, because each one runs inside the next.</p>
+        <span class="shape">process ⊂ container ⊂ Pod ⊂ node ⊂ cluster</span>
+        <div class="contains"><a href="#process">A1 Process</a><a href="#image">A2 Image &amp; container</a><a href="#pod">A3 Pod</a><a href="#node">A4 Node</a><a href="#cluster">A5 Cluster</a></div>
+      </div>
+    </section>
+
+    <!-- A1 -->
+    <section class="layer pa" id="process">
+      <div class="layer-head">
+        <span class="num">A1 · Where things run</span>
+        <h2>Process</h2>
+        <p class="lede">Your program running on one machine, using whatever that machine has installed.</p>
+      </div>
+      <div class="viz">
+        <div class="machines">
+          <div class="box machine">
+            <h3>Your laptop</h3>
+            <ul class="kv"><li><span>python</span><b>3.14</b></li><li><span>httpx</span><b>0.28.1</b></li><li><span>OS</span><b>macOS</b></li></ul>
+            <div class="term">$ pinger https://imc.com
+<span class="ok">https://imc.com: 200 in 84 ms</span></div>
+          </div>
+          <div class="box machine">
+            <h3>The server</h3>
+            <ul class="kv"><li><span>python</span><b>3.11</b></li><li><span>httpx</span><b>not installed</b></li><li><span>OS</span><b>Debian</b></li></ul>
+            <div class="term">$ pinger https://imc.com
+<span class="warn">ModuleNotFoundError: No module named 'httpx'</span></div>
+          </div>
+        </div>
+        <p class="caption">Same code, different machine, different result.</p>
+      </div>
+      <div class="handoff">
+        <span class="tag-warn">Still unsolved</span>
+        <p>The program depends on the machine. Code that works on your laptop isn't guaranteed to work on the server. <a href="#image">A2 →</a></p>
+      </div>
+    </section>
+
+    <!-- A2 -->
+    <section class="layer pa" id="image">
+      <div class="layer-head">
+        <span class="num">A2 · Where things run</span>
+        <h2>Image and container</h2>
+        <p class="lede">A Dockerfile builds an image: your program plus everything it needs. Running the image creates a container, an isolated copy that behaves the same on any machine.</p>
+      </div>
+      <div class="viz">
+        <div class="flow">
+          <div class="box">
+            <h3>Dockerfile</h3>
+            <pre class="mini">FROM python:3.14-slim
+COPY --from=uv /uv /bin/uv
+RUN uv sync --no-dev
+COPY src ./src
+ENTRYPOINT ["pinger"]</pre>
+          </div>
+          <div class="arrow">build</div>
+          <div class="box wl">
+            <h3>Image <code>pinger:0.1.0</code></h3>
+            <div class="layers">
+              <div>src/ <small>changes often</small></div>
+              <div>dependencies</div>
+              <div>uv binary</div>
+              <div>python:3.14-slim <small>base</small></div>
+            </div>
+          </div>
+          <div class="arrow">run ×3</div>
+          <div class="box">
+            <h3>Containers</h3>
+            <div class="ctrs">
+              <div class="ctr">pinger <small>own fs</small></div>
+              <div class="ctr">pinger <small>own net</small></div>
+              <div class="ctr">pinger <small>own pids</small></div>
+            </div>
+          </div>
+        </div>
+        <div class="registry">
+          <span class="pill mut">Registry</span>
+          <span class="small">Docker Hub, ghcr.io. You push images to it, and every machine that needs one pulls it from there.</span>
+        </div>
+      </div>
+      <ul class="points">
+        <li><span><b>Image:</b> a read-only package of the OS files, Python, dependencies and your code. Each Dockerfile line adds a cached layer, which is why <code>src/</code> is copied last.</span></li>
+        <li><span><b>Container:</b> a running instance of one image. It gets a thin writable layer on top, which is thrown away when the container is removed.</span></li>
+        <li><span>One image can run as many containers. Each container runs exactly one image.</span></li>
+      </ul>
+      <div class="analogy"><b>Image : container</b><span>is the same relationship as</span><b>class : instance</b><span class="small">One definition, many running copies.</span></div>
+      <details class="try"><summary>See it on minikube</summary>
+<pre class="cmd">minikube image build -t pinger:0.1.0 .   <span class="c"># build inside the cluster</span>
+minikube image ls | grep pinger           <span class="c"># the image is now available to run</span></pre></details>
+      <div class="handoff">
+        <span class="tag-warn">Still unsolved</span>
+        <p>A container on its own doesn't restart when it crashes, doesn't scale, and knows nothing about other machines. <a href="#pod">A3 →</a></p>
+      </div>
+    </section>
+
+    <!-- A3 -->
+    <section class="layer pa" id="pod">
+      <div class="layer-head">
+        <span class="num">A3 · Where things run</span>
+        <h2>Pod</h2>
+        <p class="lede">The smallest thing Kubernetes runs. It's a wrapper that gives one container (sometimes a few) its own IP and the settings Kubernetes needs to manage it.</p>
+      </div>
+      <div class="viz">
+        <div class="podgrid">
+          <div class="pod">
+            <div class="pod-head"><span class="pill wl">Pod</span><code>web-7d4b9-x2kq</code><span class="small">IP 10.244.0.7</span></div>
+            <div class="pod-ctrs">
+              <div class="ctr"><b>app</b><small>nginx · :80</small></div>
+              <div class="localhost">localhost</div>
+              <div class="ctr"><b>log-shipper</b><small>sidecar</small></div>
+            </div>
+            <div class="vol">shared volume /var/log/nginx</div>
+            <p class="small">Containers in a Pod share one IP and its volumes, always run on the same node, and are deleted together.</p>
+          </div>
+          <div class="life">
+            <div class="viz-title">Pods are replaced, never repaired</div>
+            <div class="life-row">
+              <div class="mini-pod"><span class="nm">web-7d4b9-x2kq</span><span class="ipx">10.244.0.7</span><br><span class="pill ok">Running</span></div>
+              <div class="arrow"></div>
+              <div class="mini-pod dead"><span class="nm">web-7d4b9-x2kq</span><span class="ipx">10.244.0.7</span><br><span class="pill warn">Deleted</span></div>
+            </div>
+            <div class="life-row">
+              <div></div>
+              <div class="arrow"></div>
+              <div class="mini-pod"><span class="nm">web-7d4b9-p9zt</span><span class="ipx">10.244.0.12</span><br><span class="pill ok">Running</span></div>
+            </div>
+            <p class="small">The replacement has a <b>new name</b> and a <b>new IP</b>. A single crashed container is different: kubelet restarts it inside the same Pod, which shows in the <code>RESTARTS</code> column.</p>
+          </div>
+        </div>
+      </div>
+      <ul class="points">
+        <li><span>Most Pods hold <b>one container</b>. Add a second one (a <b>sidecar</b>) only when it must share files or localhost with the first, such as a log shipper or a proxy.</span></li>
+        <li><span>Don't put a web app and its database in one Pod. They need to scale separately.</span></li>
+      </ul>
+      <details class="try"><summary>See it on minikube</summary>
+<pre class="cmd">kubectl get pods -o wide        <span class="c"># shows each Pod's IP, node and restarts</span>
+kubectl describe pod &lt;name&gt;     <span class="c"># containers, events, restarts</span>
+kubectl logs &lt;name&gt; -c app      <span class="c"># -c picks a container in a multi-container Pod</span></pre></details>
+      <div class="handoff">
+        <span class="tag-warn">Still unsolved</span>
+        <p>A Pod needs a real machine to run on. <a href="#node">A4 →</a></p>
+      </div>
+    </section>
+
+    <!-- A4 -->
+    <section class="layer pa" id="node">
+      <div class="layer-head">
+        <span class="num">A4 · Where things run</span>
+        <h2>Node</h2>
+        <p class="lede">A machine, virtual or physical, that runs Pods. Three agents on every node do the actual work.</p>
+      </div>
+      <div class="viz">
+        <div class="chain">
+          <span class="step cp">API server: "run web-x2kq on minikube"</span><span class="to">→</span>
+          <span class="step">kubelet</span><span class="to">→</span>
+          <span class="step">containerd pulls + starts</span><span class="to">→</span>
+          <span class="step wl">container running</span>
+        </div>
+        <div class="node">
+          <div class="node-head"><b>Node: minikube</b><span class="small">4 CPU · 8 GiB · Linux VM</span></div>
+          <div class="agents">
+            <div class="box"><h3>kubelet</h3><p class="small">Manages the node. Runs the Pods assigned here, restarts crashed containers, and reports status back.</p></div>
+            <div class="box"><h3>containerd</h3><p class="small">The container runtime. Pulls images and starts and stops containers.</p></div>
+            <div class="box"><h3>kube-proxy</h3><p class="small">Writes network rules so traffic sent to a <a href="#service">Service</a> reaches a Pod.</p></div>
+          </div>
+          <div class="node-pods">
+            <span class="podchip"><i></i>web-x2kq</span>
+            <span class="podchip"><i></i>web-p9zt</span>
+            <span class="podchip"><i></i>pinger-ok-4mz</span>
+          </div>
+        </div>
+      </div>
+      <ul class="points">
+        <li><span>The kubelet only <b>carries out</b> decisions. Choosing which node a Pod goes to is the scheduler's job (<a href="#control-plane">C1</a>).</span></li>
+        <li><span>If a node dies, its Pods aren't moved. They're <b>replaced</b> on healthy nodes.</span></li>
+      </ul>
+      <details class="try"><summary>See it on minikube</summary>
+<pre class="cmd">kubectl get nodes -o wide       <span class="c"># one node, called minikube</span>
+kubectl describe node minikube  <span class="c"># capacity, conditions, Pods on it</span></pre></details>
+      <div class="handoff">
+        <span class="tag-next">Next</span>
+        <p>Group many nodes under one control plane and you have a cluster. <a href="#cluster">A5 →</a></p>
+      </div>
+    </section>
+
+    <!-- A5 -->
+    <section class="layer pa" id="cluster">
+      <div class="layer-head">
+        <span class="num">A5 · Where things run</span>
+        <h2>Cluster and Namespace</h2>
+        <p class="lede">A cluster is a control plane plus all its nodes, working as one big computer. Namespaces divide the cluster into logical folders.</p>
+      </div>
+      <div class="viz">
+        <div class="cluster">
+          <span class="ch">Cluster: prod-eu</span>
+          <div class="cpstrip"><span class="t">Control plane (Part C)</span><span class="pill cp">apiserver</span><span class="pill cp">etcd</span><span class="pill cp">scheduler</span><span class="pill cp">controller-mgr</span></div>
+          <div class="nodes3">
+            <div class="nd"><span>node-1</span><span class="podchip ns-a"><i></i>web-x2kq</span><span class="podchip ns-b"><i></i>prometheus-0</span></div>
+            <div class="nd"><span>node-2</span><span class="podchip ns-a"><i></i>web-p9zt</span><span class="podchip ns-a"><i></i>pinger-4mz</span></div>
+            <div class="nd"><span>node-3</span><span class="podchip ns-b"><i></i>grafana-7c1</span><span class="podchip ns-a"><i></i>web-q81d</span></div>
+          </div>
+          <div class="chips small" style="gap:1rem">
+            <span class="podchip ns-a"><i></i>namespace default</span>
+            <span class="podchip ns-b"><i></i>namespace monitoring</span>
+          </div>
+        </div>
+        <p class="caption">Namespaces are <b>logical, not physical</b>. Pods from one namespace can be spread across any node. A namespace scopes names, permissions and quotas.</p>
+      </div>
+      <div class="aside">
+        <div class="mk"><b>minikube</b><br><span class="cpx">control plane</span><br>+<br><span class="wlx">worker</span></div>
+        <p class="small">Your minikube cluster is the smallest possible cluster: <b>one node that is both control plane and worker</b>. You can see the control plane running as Pods with <code>kubectl get pods -n kube-system</code>.</p>
+      </div>
+      <div class="handoff">
+        <span class="tag-next">End of Part A</span>
+        <p>You know where things run. Next: how you tell Kubernetes what should run there. <a href="#part-b">Part B →</a></p>
+      </div>
+    </section>
+
+    <!-- ================= PART B ================= -->
+    <section class="part pb" id="part-b">
+      <div class="part-tag">B</div>
+      <div>
+        <span class="num">Part B</span>
+        <h2>What you declare</h2>
+        <p>API objects are <b>records</b> you write in YAML and send with <code>kubectl apply</code>. Each one is stored in etcd. Each says what you want (its <b>spec</b>) and records what's actually happening (its <b>status</b>).</p>
+        <p>These aren't layers. They don't contain Pods the way a node does. They sit <b>beside</b> the Pods and manage them: they point at Pods with a label selector, then create, delete or route traffic to them. Each one is a <b>feature</b>.</p>
+        <p class="small">Strictly, Pods and Nodes are API objects too. The difference is that a Pod record describes something actually running, while a Deployment or Service record describes how to manage Pods.</p>
+        <div class="contains"><a href="#labels">B1 Labels &amp; selectors</a><a href="#deployment">B2 ReplicaSet &amp; Deployment</a><a href="#service">B3 Service</a><a href="#jobs">B4 Job &amp; CronJob</a></div>
+      </div>
+    </section>
+
+    <!-- B1 -->
+    <section class="layer pb" id="labels">
+      <div class="layer-head">
+        <span class="num">B1 · What you declare</span>
+        <h2>Labels and selectors</h2>
+        <p class="lede">Key-value tags on Pods, plus queries that match them. Every other object in this part uses them to find its Pods.</p>
+      </div>
+      <div class="viz">
+        <div class="chips" id="sel-chips" role="group" aria-label="Choose a selector">
+          <span class="lbl">Selector</span>
+        </div>
+        <div class="label-pods" id="label-pods"></div>
+        <p class="result" id="sel-result"></p>
+      </div>
+      <div class="viz">
+        <div class="viz-title">How an object points at Pods</div>
+        <div class="objpoint">
+          <div class="box obj"><h3>Service web</h3>
+<pre>selector:
+  app: web</pre></div>
+          <div class="arrow">matches</div>
+          <div class="box wl"><h3>Pods with that label</h3>
+<pre>metadata:
+  labels:
+    app: web
+    env: prod</pre></div>
+        </div>
+        <p class="caption">The object stores a <b>query</b>, not a list of names. A replacement Pod with the right labels is picked up automatically, whatever its name or IP.</p>
+      </div>
+      <details class="try"><summary>See it on minikube</summary>
+<pre class="cmd">kubectl get pods --show-labels
+kubectl get pods -l app=web               <span class="c"># -l is a label selector</span>
+kubectl get pods -l 'app=web,env=prod'    <span class="c"># comma means AND</span></pre></details>
+      <div class="handoff">
+        <span class="tag-next">Next</span>
+        <p>Use a selector to keep a set of Pods alive and to change their version safely. <a href="#deployment">B2 →</a></p>
+      </div>
+    </section>
+
+    <!-- B2 -->
+    <section class="layer pb" id="deployment">
+      <div class="layer-head">
+        <span class="num">B2 · What you declare</span>
+        <h2>ReplicaSet and Deployment</h2>
+        <p class="lede">A ReplicaSet keeps N matching Pods running. A Deployment manages ReplicaSets so you can roll out new versions and roll them back.</p>
+      </div>
+      <div class="viz">
+        <div class="viz-title">Self-healing: try breaking it</div>
+        <div class="rs">
+          <div class="rs-head"><span>ReplicaSet <b>web-7d4b9</b></span><span class="small">selector app=web</span></div>
+          <div class="counts"><span>desired <b id="rs-desired">3</b></span><span>running <b id="rs-running">3</b></span></div>
+          <div class="pods" id="rs-pods" aria-live="polite"></div>
+          <div class="btns">
+            <button type="button" id="rs-kill" class="primary">Delete a Pod</button>
+            <button type="button" id="rs-down">Scale −</button>
+            <button type="button" id="rs-up">Scale +</button>
+          </div>
+          <p class="log" id="rs-log">The ReplicaSet controller compares desired with running and acts on the difference.</p>
+        </div>
+      </div>
+      <div class="viz">
+        <div class="viz-title">Rolling update: nginx:1.27 → nginx:1.28, 4 replicas</div>
+        <div class="dep">
+          <div class="dep-head"><span>Deployment <b>web</b></span><span class="small">maxSurge 25% = +1 · maxUnavailable 25% = −1</span></div>
+          <div class="dep-rs"><div class="rsn">ReplicaSet web-5f8c<small>image nginx:1.27</small></div><div class="dots" id="ro-a"></div></div>
+          <div class="dep-rs"><div class="rsn">ReplicaSet web-7d4b<small>image nginx:1.28</small></div><div class="dots" id="ro-b"></div></div>
+          <div class="meters">
+            <div class="meter">Pods in total <b id="ro-total">4</b> / max 5</div>
+            <div class="meter">Pods serving <b id="ro-serving">4</b> / min 3</div>
+          </div>
+        </div>
+        <p class="step-text" id="ro-text"></p>
+        <div class="btns">
+          <button type="button" id="ro-prev">Back</button>
+          <button type="button" id="ro-next" class="primary">Next step</button>
+          <span class="stepno" id="ro-no"></span>
+        </div>
+        <div class="legend-row"><span><i class="dot sm v1"></i> v1 Pod ready</span><span><i class="dot sm v2"></i> v2 Pod ready</span><span><i class="dot sm v2 start"></i> v2 Pod starting</span></div>
+      </div>
+      <ul class="points">
+        <li><span>The chain of ownership is <b>Deployment → ReplicaSet → Pods</b>. You create the Deployment, and the objects below it are created for you.</span></li>
+        <li><span>The old ReplicaSet is kept at 0 replicas, so <code>rollout undo</code> just scales it back up.</span></li>
+      </ul>
+      <details class="try"><summary>See it on minikube</summary>
+<pre class="cmd">kubectl create deployment web --image=nginx:1.27 --replicas=4
+kubectl scale deployment web --replicas=6
+kubectl set image deployment/web nginx=nginx:1.28
+kubectl rollout status deployment/web
+kubectl get rs                           <span class="c"># old ReplicaSet at 0, new one at 6</span>
+kubectl rollout undo deployment/web</pre></details>
+      <div class="handoff">
+        <span class="tag-warn">Still unsolved</span>
+        <p>Pods keep being replaced and their IPs keep changing. How does anything find them? <a href="#service">B3 →</a></p>
+      </div>
+    </section>
+
+    <!-- B3 -->
+    <section class="layer pb" id="service">
+      <div class="layer-head">
+        <span class="num">B3 · What you declare</span>
+        <h2>Service</h2>
+        <p class="lede">A stable name and IP in front of a changing set of Pods. The Pods behind it are chosen by a label selector.</p>
+      </div>
+      <div class="viz">
+        <div class="svc-flow">
+          <div class="box"><h3>Client Pod</h3><code>curl http://web</code><p class="small" style="margin-top:.35rem">Cluster DNS turns <code>web</code> into the Service IP.</p></div>
+          <div class="arrow"></div>
+          <div class="svc"><b>Service web</b>ClusterIP 10.96.142.7:80<br>selector app=web<br><span class="fixed" id="svc-fixed">address never changes</span></div>
+          <div class="arrow"></div>
+          <div class="svc-pods" id="svc-pods" aria-live="polite"></div>
+        </div>
+        <div class="btns">
+          <button type="button" id="svc-send" class="primary">Send a request</button>
+          <button type="button" id="svc-replace">Replace all Pods</button>
+          <span class="log" id="svc-log"></span>
+        </div>
+      </div>
+      <div class="viz">
+        <div class="viz-title">Service types: each one builds on the one inside it</div>
+        <div class="reach">
+          <div class="ring r3"><div class="rh"><b>LoadBalancer</b><span>a cloud load balancer with a public IP, sending traffic to the NodePort</span></div>
+            <div class="ring r2"><div class="rh"><b>NodePort</b><span>a port (30000-32767) opened on every node</span></div>
+              <div class="ring r1"><div class="rh"><b>ClusterIP</b><span>default · only reachable inside the cluster</span></div></div>
+            </div>
+          </div>
+        </div>
+        <p class="caption">The Service object is only a record. kube-proxy on each node (<a href="#node">A4</a>) turns it into real network rules. On minikube on a Mac, use <code>kubectl port-forward</code> or <code>minikube service --url</code>.</p>
+      </div>
+      <details class="try"><summary>See it on minikube</summary>
+<pre class="cmd">kubectl expose deployment web --port 80 --type NodePort
+kubectl get svc web
+kubectl get endpointslices -l kubernetes.io/service-name=web   <span class="c"># current Pod IPs</span>
+kubectl port-forward svc/web 8080:80                           <span class="c"># then open localhost:8080</span></pre></details>
+      <div class="handoff">
+        <span class="tag-warn">Still unsolved</span>
+        <p>Deployments assume your program runs forever. Some work, like a health check or a report, should run once and then stop. <a href="#jobs">B4 →</a></p>
+      </div>
+    </section>
+
+    <!-- B4 -->
+    <section class="layer pb" id="jobs">
+      <div class="layer-head">
+        <span class="num">B4 · What you declare</span>
+        <h2>Job and CronJob</h2>
+        <p class="lede">A Job runs Pods until the work succeeds. A CronJob creates a new Job on a schedule.</p>
+      </div>
+      <div class="viz">
+        <div class="scroll-x">
+          <div class="tl">
+            <div class="who">Deployment<small>web</small></div>
+            <div class="track"><div class="seg run" style="left:1%;right:1%">runs forever · restarted if it exits</div></div>
+
+            <div class="who">Job<small>pinger-ok</small></div>
+            <div class="track"><div class="seg okk" style="left:1%;width:12%">exit 0</div><div class="seg flag" style="left:14%;width:40%">Complete</div></div>
+
+            <div class="who">Job<small>pinger-bad · backoffLimit 2</small></div>
+            <div class="track"><div class="seg fail" style="left:1%;width:12%">exit 1</div><div class="seg fail" style="left:17%;width:12%">retry 1</div><div class="seg fail" style="left:37%;width:12%">retry 2</div><div class="seg flag" style="left:51%;width:48%">Failed: BackoffLimitExceeded</div></div>
+
+            <div class="who">CronJob<small>*/5 * * * *</small></div>
+            <div class="track">
+              <div class="tick" style="left:1%"></div><div class="seg okk" style="left:1.5%;width:9%">Job</div>
+              <div class="tick" style="left:25.5%"></div><div class="seg okk" style="left:26%;width:9%">Job</div>
+              <div class="tick" style="left:50%"></div><div class="seg okk" style="left:50.5%;width:9%">Job</div>
+              <div class="tick" style="left:74.5%"></div><div class="seg okk" style="left:75%;width:9%">Job</div>
+            </div>
+            <div class="axis"><span>00:00</span><span>00:05</span><span>00:10</span><span>00:15</span><span>00:20</span></div>
+          </div>
+        </div>
+        <p class="caption">Retries back off: each wait is longer than the one before. <code>backoffLimit: 2</code> means 2 retries after the first failure, so 3 attempts in total.</p>
+      </div>
+      <ul class="points">
+        <li><span>The exit code decides success: <b>0 means Complete</b>, and anything else is retried. That's why pinger returns 1 when a URL is down.</span></li>
+        <li><span>Ownership again: <b>CronJob → Job → Pod</b>. Deleting the parent deletes the children.</span></li>
+      </ul>
+      <details class="try"><summary>See it on minikube</summary>
+<pre class="cmd">kubectl create job pinger-ok --image=pinger:0.1.0 -- pinger https://example.com
+kubectl get jobs,pods
+kubectl create job manual-run --from=cronjob/pinger   <span class="c"># trigger a CronJob now</span></pre></details>
+      <div class="handoff">
+        <span class="tag-next">End of Part B</span>
+        <p>These objects are just records. Who reads them and actually makes things happen? <a href="#part-c">Part C →</a></p>
+      </div>
+    </section>
+
+    <!-- ================= PART C ================= -->
+    <section class="part pc" id="part-c">
+      <div class="part-tag">C</div>
+      <div>
+        <span class="num">Part C</span>
+        <h2>What makes it happen</h2>
+        <p>The control plane isn't a layer either. It's the <b>machinery</b> that connects the other two parts: it stores the objects from Part B, and its controllers keep changing Part A until reality matches them.</p>
+        <span class="shape">objects (B) → controllers (C) → running Pods (A)</span>
+        <div class="contains"><a href="#control-plane">C1 Control plane</a><a href="#desired">C2 Desired state</a><a href="#e2e">C3 End to end</a></div>
+      </div>
+    </section>
+
+    <!-- C1 -->
+    <section class="layer pc" id="control-plane">
+      <div class="layer-head">
+        <span class="num">C1 · What makes it happen</span>
+        <h2>Control plane</h2>
+        <p class="lede">Four components. One of them stores state, and the other three watch that state and act on it.</p>
+      </div>
+      <div class="viz">
+        <div class="scroll-x">
+          <svg class="hub" viewBox="0 0 760 392" role="img" aria-label="Hub and spoke: kubectl, scheduler, controller manager and kubelets all talk to the API server; only the API server talks to etcd">
+            <defs>
+              <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0 L10 5 L0 10 z"/></marker>
+              <marker id="ahdb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah db" d="M0 0 L10 5 L0 10 z"/></marker>
+            </defs>
+            <rect class="bound" x="190" y="10" width="560" height="226" rx="14"/>
+            <text class="lab" x="204" y="226">CONTROL PLANE</text>
+            <text class="lab" x="232" y="384">WORKER NODES (PART A)</text>
+
+            <path class="ln" d="M160 180 L326 180" marker-end="url(#ah)"/>
+            <path class="ln" d="M310 82 L378 148" marker-end="url(#ah)" marker-start="url(#ah)"/>
+            <path class="ln" d="M530 82 L442 148" marker-end="url(#ah)" marker-start="url(#ah)"/>
+            <path class="ln db" d="M492 180 L556 180" marker-end="url(#ahdb)" marker-start="url(#ahdb)"/>
+            <path class="ln" d="M310 298 L378 212" marker-end="url(#ah)" marker-start="url(#ah)"/>
+            <path class="ln" d="M530 298 L442 212" marker-end="url(#ah)" marker-start="url(#ah)"/>
+
+            <rect class="b" x="20" y="156" width="140" height="48" rx="8"/>
+            <text x="90" y="178" text-anchor="middle">kubectl</text>
+            <text class="sub" x="90" y="194" text-anchor="middle">you</text>
+
+            <rect class="b cp" x="230" y="34" width="160" height="48" rx="8"/>
+            <text x="310" y="56" text-anchor="middle">kube-scheduler</text>
+            <text class="sub" x="310" y="72" text-anchor="middle">places Pods</text>
+
+            <rect class="b cp" x="450" y="34" width="160" height="48" rx="8"/>
+            <text x="530" y="56" text-anchor="middle">controller-mgr</text>
+            <text class="sub" x="530" y="72" text-anchor="middle">reconcile loops</text>
+
+            <rect class="b api" x="330" y="150" width="160" height="60" rx="10"/>
+            <text class="t-api" x="410" y="178" text-anchor="middle">kube-apiserver</text>
+            <text class="t-api" x="410" y="196" text-anchor="middle" style="font-weight:400;font-size:11px">the front door</text>
+
+            <rect class="b cp" x="560" y="156" width="160" height="48" rx="8"/>
+            <text x="640" y="178" text-anchor="middle">etcd</text>
+            <text class="sub" x="640" y="194" text-anchor="middle">stores Part B objects</text>
+
+            <rect class="b wl" x="230" y="300" width="160" height="48" rx="8"/>
+            <text x="310" y="322" text-anchor="middle">kubelet</text>
+            <text class="sub" x="310" y="338" text-anchor="middle">node-1</text>
+
+            <rect class="b wl" x="450" y="300" width="160" height="48" rx="8"/>
+            <text x="530" y="322" text-anchor="middle">kubelet</text>
+            <text class="sub" x="530" y="338" text-anchor="middle">node-2</text>
+
+            <text class="sub" x="243" y="170" text-anchor="middle">HTTPS</text>
+            <text class="sub" x="524" y="170" text-anchor="middle">only link</text>
+            <text class="sub" x="652" y="262" text-anchor="middle">every arrow: watch for changes,</text>
+            <text class="sub" x="652" y="277" text-anchor="middle">then write updates back</text>
+          </svg>
+        </div>
+        <div class="comp">
+          <div class="box"><h3>kube-apiserver</h3><p class="small">Every read and write goes through it. It validates requests, authenticates callers, and lets other components watch for changes.</p></div>
+          <div class="box"><h3>etcd</h3><p class="small">A key-value store holding every object. If you lose etcd, the cluster forgets everything, so it's the part you back up.</p></div>
+          <div class="box"><h3>kube-scheduler</h3><p class="small">Finds Pods with no node yet and picks one for each, based on free CPU and memory and any constraints.</p></div>
+          <div class="box"><h3>kube-controller-manager</h3><p class="small">Runs one controller per object kind. Each controller is a loop that makes its objects true.</p></div>
+        </div>
+      </div>
+      <div class="viz">
+        <div class="viz-title">Every object in Part B has a controller</div>
+        <div class="scroll-x">
+          <table class="ctl-table">
+            <thead><tr><th>Object (B)</th><th>Controller (C)</th><th>What it changes</th></tr></thead>
+            <tbody>
+              <tr><td>Deployment</td><td>deployment</td><td>Creates and scales ReplicaSets during rollouts</td></tr>
+              <tr><td>ReplicaSet</td><td>replicaset</td><td>Creates or deletes Pods until the count matches</td></tr>
+              <tr><td>Service</td><td>endpointslice</td><td>Keeps the list of matching Pod IPs current; kube-proxy routes to it</td></tr>
+              <tr><td>Job</td><td>job</td><td>Creates Pods, retries failures, marks the Job Complete or Failed</td></tr>
+              <tr><td>CronJob</td><td>cronjob</td><td>Creates a Job at each scheduled time</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="loop">
+          <div class="box cp"><span class="k">1 · Observe</span><span class="small">Read the object's spec: <code>replicas: 3</code></span></div>
+          <div class="box cp"><span class="k">2 · Compare</span><span class="small">Count what's actually running: 2. The gap is 1.</span></div>
+          <div class="box cp"><span class="k">3 · Act</span><span class="small">Create 1 Pod via the API server.</span></div>
+        </div>
+        <div class="loop-back">↺ every controller repeats this, forever</div>
+      </div>
+      <div class="handoff">
+        <span class="tag-next">Next</span>
+        <p>The principle behind every one of those loops. <a href="#desired">C2 →</a></p>
+      </div>
+    </section>
+
+    <!-- C2 -->
+    <section class="layer pc" id="desired">
+      <div class="layer-head">
+        <span class="num">C2 · What makes it happen</span>
+        <h2>Desired state</h2>
+        <p class="lede">You never tell Kubernetes "start a container". You declare what you want, and controllers close the gap.</p>
+      </div>
+      <div class="viz">
+        <div class="spec">
+          <div class="box obj"><h3>spec · you write it (B)</h3>
+<pre>kind: Deployment
+spec:
+  replicas: 3
+  template:
+    image: nginx:1.28</pre></div>
+          <div class="arrow">controller (C)<br>closes the gap</div>
+          <div class="box wl"><h3>status · what runs (A)</h3>
+<pre>status:
+  replicas: 3
+  readyReplicas: <span class="gap">2</span>
+  <span class="gap"># 1 Pod still starting</span></pre></div>
+        </div>
+        <p class="caption">This is <b>reconciliation</b>. It's why a deleted Pod comes back, and why running <code>kubectl apply -f</code> on the same file twice changes nothing the second time.</p>
+      </div>
+    </section>
+
+    <!-- C3 -->
+    <section class="layer pc" id="e2e">
+      <div class="layer-head">
+        <span class="num">C3 · All three parts at once</span>
+        <h2>One command, end to end</h2>
+        <p class="lede">What happens after <code>kubectl create deployment web --image=nginx --replicas=3</code>. Click a step, or walk through them in order.</p>
+      </div>
+      <div class="viz">
+        <div class="scroll-x"><div class="e2e" id="e2e-grid"></div></div>
+        <div class="btns">
+          <button type="button" id="e2e-prev">Back</button>
+          <button type="button" id="e2e-next" class="primary">Next step</button>
+          <span class="stepno" id="e2e-no"></span>
+        </div>
+      </div>
+      <ul class="points">
+        <li><span><b>Every line passes through the API server.</b> No component calls another one directly. Each one watches for the objects it cares about and does its own small job.</span></li>
+        <li><span>So any component can crash and restart, then catch up from the state in etcd. That loose coupling is what makes the system resilient.</span></li>
+      </ul>
+    </section>
+
+    <!-- ================= REFERENCE ================= -->
+    <section class="layer" id="ref">
+      <div class="layer-head">
+        <span class="num">Keep this handy</span>
+        <h2>Quick reference</h2>
+      </div>
+      <div class="scroll-x">
+        <table class="ref">
+          <thead><tr><th>Thing</th><th>Section</th><th>What it is</th><th>Try it</th></tr></thead>
+          <tbody>
+            <tr class="grp pa"><td colspan="4">A · Where things run</td></tr>
+            <tr><td>Container</td><td>A2</td><td>A running instance of one image</td><td><code>kubectl logs &lt;pod&gt; -c app</code></td></tr>
+            <tr><td>Pod</td><td>A3</td><td>One or more containers sharing an IP, always on one node</td><td><code>kubectl get pods -o wide</code></td></tr>
+            <tr><td>Node</td><td>A4</td><td>Machine that runs Pods via kubelet and containerd</td><td><code>kubectl get nodes</code></td></tr>
+            <tr><td>Namespace</td><td>A5</td><td>Logical folder for names, access and quotas</td><td><code>kubectl get pods -n kube-system</code></td></tr>
+            <tr class="grp pb"><td colspan="4">B · What you declare</td></tr>
+            <tr><td>ReplicaSet</td><td>B2</td><td>Keeps N Pods matching a selector running</td><td><code>kubectl get rs</code></td></tr>
+            <tr><td>Deployment</td><td>B2</td><td>Versioned ReplicaSets with rolling updates and rollback</td><td><code>kubectl rollout undo deploy/web</code></td></tr>
+            <tr><td>Service</td><td>B3</td><td>Stable name and IP in front of matching Pods</td><td><code>kubectl get svc</code></td></tr>
+            <tr><td>Job</td><td>B4</td><td>Runs Pods until one exits 0, with retries</td><td><code>kubectl get jobs</code></td></tr>
+            <tr><td>CronJob</td><td>B4</td><td>Creates a Job on a cron schedule</td><td><code>kubectl get cronjobs</code></td></tr>
+            <tr class="grp pc"><td colspan="4">C · What makes it happen</td></tr>
+            <tr><td>API server</td><td>C1</td><td>Front door for every read and write</td><td><code>kubectl get --raw /healthz</code></td></tr>
+            <tr><td>etcd</td><td>C1</td><td>Database of every object</td><td><code>kubectl get pods -n kube-system</code></td></tr>
+            <tr><td>Scheduler</td><td>C1</td><td>Picks a node for each new Pod</td><td><code>kubectl describe pod &lt;pod&gt;</code> (Events)</td></tr>
+            <tr><td>Controllers</td><td>C1</td><td>Loops that make each object's spec true</td><td><code>kubectl get events -w</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <footer>Companion to <code>k8s/README.md</code>. Names like <code>web-7d4b9</code> and the IPs are examples in minikube's default ranges (Pods 10.244.0.0/16, Services 10.96.0.0/12).</footer>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const slow = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const rand = (n) => Array.from({ length: n }, () => 'abcdefghjkmnpqrstuvwxyz23456789'[Math.floor(Math.random() * 31)]).join('');
+
+  /* ---- sidebar: highlight current section ---- */
+  const toc = $('.toc');
+  const links = [...document.querySelectorAll('.toc a:not(.toc-group)')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      const a = byId.get(e.target.id);
+      if (!a) return;
+      links.forEach((l) => l.classList.toggle('on', l === a));
+      if (toc.scrollWidth > toc.clientWidth) toc.scrollTo({ left: a.offsetLeft - 16, behavior: slow ? 'smooth' : 'auto' });
+    });
+  }, { rootMargin: '-35% 0px -60% 0px' });
+  document.querySelectorAll('main > section[id]').forEach((s) => io.observe(s));
+
+  /* ---- B1 labels & selectors ---- */
+  const lpods = [
+    { name: 'web-x2kq', labels: { app: 'web', env: 'prod' } },
+    { name: 'web-p9zt', labels: { app: 'web', env: 'prod' } },
+    { name: 'web-staging-a1', labels: { app: 'web', env: 'staging' } },
+    { name: 'pinger-4mz', labels: { app: 'pinger', env: 'prod' } },
+    { name: 'pinger-staging-k4', labels: { app: 'pinger', env: 'staging' } },
+    { name: 'redis-0', labels: { app: 'redis', env: 'prod' } },
+  ];
+  const selectors = ['app=web', 'app=pinger', 'env=prod', 'app=web,env=prod'];
+  const chipsEl = $('#sel-chips'), lpodsEl = $('#label-pods'), resEl = $('#sel-result');
+  lpodsEl.innerHTML = lpods.map((p, i) => `<div class="lpod" data-i="${i}"><span class="nm">${p.name}</span><div class="tags">${Object.entries(p.labels).map(([k, v]) => `<span data-kv="${k}=${v}">${k}=${v}</span>`).join('')}</div></div>`).join('');
+  selectors.forEach((s) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = s; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => applySel(s));
+    chipsEl.appendChild(b);
+  });
+  function applySel(sel) {
+    const reqs = sel.split(',');
+    chipsEl.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c.textContent === sel)));
+    let n = 0;
+    lpodsEl.querySelectorAll('.lpod').forEach((el) => {
+      const p = lpods[+el.dataset.i];
+      const ok = reqs.every((r) => { const [k, v] = r.split('='); return p.labels[k] === v; });
+      if (ok) n++;
+      el.classList.toggle('match', ok); el.classList.toggle('dim', !ok);
+      el.querySelectorAll('.tags span').forEach((t) => t.classList.toggle('hit', ok && reqs.includes(t.dataset.kv)));
+    });
+    resEl.innerHTML = `selector <b>${sel}</b> matches <b>${n}</b> of ${lpods.length} Pods${sel.includes(',') ? ' (comma means every label must match)' : ''}`;
+  }
+  applySel('app=web');
+
+  /* ---- B2 self-healing ReplicaSet ---- */
+  let ipN = 20, desired = 3;
+  const mk = (status = 'running') => ({ id: 'web-7d4b9-' + rand(4), ip: '10.244.0.' + (ipN++), status });
+  let rsPods = [mk(), mk(), mk()];
+  const rsEl = $('#rs-pods'), rsLog = $('#rs-log');
+  const delay = (ms) => (slow ? ms : 120);
+  function rsRender() {
+    rsEl.innerHTML = rsPods.map((p) => `<div class="p ${p.status === 'running' ? '' : p.status}">${p.id}<small>${p.status === 'creating' ? 'ContainerCreating' : p.status === 'terminating' ? 'Terminating' : p.ip}</small></div>`).join('');
+    $('#rs-desired').textContent = desired;
+    $('#rs-running').textContent = rsPods.filter((p) => p.status === 'running').length;
+    $('#rs-down').disabled = desired <= 0;
+    $('#rs-up').disabled = desired >= 8;
+    $('#rs-kill').disabled = !rsPods.some((p) => p.status === 'running');
+  }
+  function reconcile() {
+    const alive = rsPods.filter((p) => p.status !== 'terminating');
+    if (alive.length < desired) {
+      const made = [];
+      for (let i = alive.length; i < desired; i++) { const p = mk('creating'); rsPods.push(p); made.push(p); }
+      rsLog.innerHTML = `Saw <b>${alive.length}</b> of <b>${desired}</b> → created ${made.map((p) => '<b>' + p.id + '</b>').join(', ')}`;
+      setTimeout(() => { made.forEach((p) => { p.status = 'running'; }); rsRender(); }, delay(1100));
+    } else if (alive.length > desired) {
+      const extra = alive.slice(desired);
+      extra.forEach((p) => { p.status = 'terminating'; });
+      rsLog.innerHTML = `Saw <b>${alive.length}</b> of <b>${desired}</b> → deleting ${extra.length} Pod${extra.length > 1 ? 's' : ''}`;
+      setTimeout(() => { rsPods = rsPods.filter((p) => !extra.includes(p)); rsRender(); }, delay(800));
+    }
+    rsRender();
+  }
+  $('#rs-kill').addEventListener('click', () => {
+    const running = rsPods.filter((p) => p.status === 'running');
+    if (!running.length) return;
+    const victim = running[Math.floor(Math.random() * running.length)];
+    victim.status = 'terminating';
+    rsLog.innerHTML = `You deleted <b>${victim.id}</b>…`;
+    rsRender();
+    setTimeout(() => { rsPods = rsPods.filter((p) => p !== victim); reconcile(); }, delay(700));
+    setTimeout(reconcile, delay(250));
+  });
+  $('#rs-up').addEventListener('click', () => { desired = Math.min(8, desired + 1); reconcile(); });
+  $('#rs-down').addEventListener('click', () => { desired = Math.max(0, desired - 1); reconcile(); });
+  rsRender();
+
+  /* ---- B2 rolling update stepper ---- */
+  const ro = [
+    { a: [1, 1, 1, 1], b: [], t: 'Deployment <b>web</b> runs 4 Pods of nginx:1.27 through ReplicaSet web-5f8c. You run <code>kubectl set image</code> to switch to nginx:1.28.' },
+    { a: [1, 1, 1], b: [0, 0], t: 'The Deployment creates ReplicaSet web-7d4b. It may add 1 extra Pod (surge) and take 1 down (unavailable), so the old set is scaled to 3 and two new Pods start.' },
+    { a: [1], b: [1, 1, 0, 0], t: 'The first two new Pods are ready. The old set is scaled to 1, and two more new Pods start. At least 3 Pods are serving the whole time.' },
+    { a: [], b: [1, 1, 1, 1], t: 'Done. All 4 Pods run nginx:1.28. web-5f8c stays at 0 replicas, so <code>kubectl rollout undo</code> can scale it back up the same way.' },
+  ];
+  let roI = 0;
+  function roRender() {
+    const s = ro[roI];
+    const dots = (arr, cls) => arr.length ? arr.map((r) => `<i class="dot ${cls}${r ? '' : ' start'}" title="${r ? 'ready' : 'starting'}"></i>`).join('') : '<span class="dot-none">0 replicas</span>';
+    $('#ro-a').innerHTML = dots(s.a, 'v1');
+    $('#ro-b').innerHTML = dots(s.b, 'v2');
+    $('#ro-total').textContent = s.a.length + s.b.length;
+    $('#ro-serving').textContent = s.a.filter(Boolean).length + s.b.filter(Boolean).length;
+    $('#ro-text').innerHTML = s.t;
+    $('#ro-no').textContent = `Step ${roI + 1} of ${ro.length}`;
+    $('#ro-prev').disabled = roI === 0;
+    $('#ro-next').textContent = roI === ro.length - 1 ? 'Start over' : 'Next step';
+  }
+  $('#ro-next').addEventListener('click', () => { roI = roI === ro.length - 1 ? 0 : roI + 1; roRender(); });
+  $('#ro-prev').addEventListener('click', () => { roI = Math.max(0, roI - 1); roRender(); });
+  roRender();
+
+  /* ---- B3 service ---- */
+  let svcIp = 40, replaced = 0, rr = 0;
+  const svcMk = () => Array.from({ length: 3 }, () => ({ id: 'web-' + rand(4), ip: '10.244.0.' + (svcIp++) }));
+  let svcPods = svcMk();
+  const svcEl = $('#svc-pods'), svcLog = $('#svc-log');
+  function svcRender(hit = -1) {
+    svcEl.innerHTML = svcPods.map((p, i) => `<div class="p${i === hit ? ' hit' : ''}">${p.id}<small>${p.ip}</small></div>`).join('');
+  }
+  $('#svc-send').addEventListener('click', () => {
+    const i = rr++ % svcPods.length;
+    svcRender(i);
+    svcLog.innerHTML = `Answered by <b>${svcPods[i].id}</b> at ${svcPods[i].ip}`;
+  });
+  $('#svc-replace').addEventListener('click', () => {
+    svcPods = svcMk(); replaced++;
+    svcRender();
+    svcLog.innerHTML = `Pods replaced ${replaced}× · new IPs, same <b>http://web</b>`;
+  });
+  svcRender();
+
+  /* ---- C3 end to end ---- */
+  const lanes = [['You', 'you'], ['API server', 'cp'], ['etcd', 'cp'], ['Controllers', 'cp'], ['Scheduler', 'cp'], ['kubelet', 'wl'], ['containerd', 'wl'], ['kube-proxy', 'wl']];
+  const steps = [
+    [0, 0, 1, '<b>kubectl</b> sends the <span class="obj-tag">Deployment</span> object to the API server.'],
+    [1, 1, 2, 'The <b>API server</b> validates it and stores it in etcd.'],
+    [3, 1, 3, 'The <b>Deployment controller</b> sees a new Deployment and creates a <span class="obj-tag">ReplicaSet</span>.'],
+    [3, 1, 3, 'The <b>ReplicaSet controller</b> sees 0 of 3 Pods and creates 3 Pod records. None of them has a node yet.'],
+    [4, 1, 4, 'The <b>scheduler</b> sees Pods with no node and writes a node name onto each one.'],
+    [5, 1, 5, 'The <b>kubelet</b> on that node sees a Pod assigned to it and asks containerd to run it.'],
+    [6, 5, 6, '<b>containerd</b> pulls the nginx image and starts the container. Something is now actually running.'],
+    [5, 1, 5, 'The <b>kubelet</b> reports <code>Running</code>, and the API server saves the status in etcd.'],
+    [7, 1, 7, 'If a <span class="obj-tag">Service</span> selects these Pods, <b>kube-proxy</b> updates its routing rules to the new Pod IPs.'],
+  ];
+  const grid = $('#e2e-grid');
+  grid.innerHTML = `<div class="lanes"><div></div>${lanes.map(([n, k]) => `<div class="${k}">${n}</div>`).join('')}</div>` +
+    steps.map(([act, from, to, text], i) => `<div class="estep" data-i="${i}"><div class="erow"><span class="sn">${i + 1}</span>` +
+      `<span class="bar" style="grid-column:${from + 2} / ${to + 3};grid-row:1"></span>` +
+      `<span class="act ${lanes[act][1]}" style="grid-column:${act + 2};grid-row:1"></span></div>` +
+      `<p class="etext">${text}</p></div>`).join('');
+  let eI = 0;
+  const eSteps = [...grid.querySelectorAll('.estep')];
+  function eRender() {
+    eSteps.forEach((el, i) => el.classList.toggle('on', i === eI));
+    $('#e2e-no').textContent = `Step ${eI + 1} of ${steps.length}`;
+    $('#e2e-prev').disabled = eI === 0;
+    $('#e2e-next').textContent = eI === steps.length - 1 ? 'Start over' : 'Next step';
+  }
+  eSteps.forEach((el, i) => el.addEventListener('click', () => { eI = i; eRender(); }));
+  $('#e2e-next').addEventListener('click', () => { eI = eI === steps.length - 1 ? 0 : eI + 1; eRender(); });
+  $('#e2e-prev').addEventListener('click', () => { eI = Math.max(0, eI - 1); eRender(); });
+  eRender();
+})();
+</script>
