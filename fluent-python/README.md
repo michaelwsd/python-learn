@@ -29,20 +29,23 @@ uv run pytest ch01 -v              # check your exercises
 
 **Order:** 1 → 2 → 3 cover the core data structures. 6 → 7 explain how names and objects behave before treating functions as objects. 8 adds type hints on top. 14 comes last because it builds on everything before it.
 
-**Skipped chapters you'll see mentioned:**
-- Ch 5 (data classes) is used in Ch 8's examples.
-- Ch 9 (decorators): the basics are covered in `docs/imc-notes.pdf`.
-- Ch 13 (protocols and ABCs) overlaps with Ch 8 and 14.
+**Skipped chapter you'll see mentioned:** Ch 9 (decorators). The basics are covered in `docs/imc-notes.pdf`.
 
 **Effort:** about 15-20 hours in total. Ch 2 and Ch 8 are the longest. A mixed checkpoint across all chapters comes at the end.
 
-## Progress
+## Extension (if time)
 
-- [ ] Ch 1: The Python Data Model (set up: `ch01/`)
-- [ ] Ch 2: An Array of Sequences
-- [ ] Ch 3: Dictionaries and Sets
-- [ ] Ch 6: Object References, Mutability, and Recycling
-- [ ] Ch 7: Functions as First-Class Objects
-- [ ] Ch 8: Type Hints in Functions
-- [ ] Ch 14: Inheritance: For Better or for Worse
-- [ ] Final checkpoint
+Same four-step format, after the core chapters above.
+
+| # | Chapter | Pages | Key ideas | Exercises practise |
+|---|---|---|---|---|
+| 5 | Data Class Builders | 163-200 (PDF 193-230) | `namedtuple` vs `typing.NamedTuple` vs `@dataclass`; `field()` and mutable defaults; `__post_init__`; `frozen=True`; `ClassVar` and `InitVar`; data classes as a code smell; `match` on class instances | Turning hand-written classes into data classes, validation in `__post_init__` |
+| 13 | Interfaces, Protocols, and ABCs | 431-486 (PDF 461-516) | The four kinds of typing (duck, goose, static, static duck); monkey patching; the stdlib ABCs; writing and subclassing an ABC; virtual subclasses with `register`; `typing.Protocol` and `@runtime_checkable` | Writing an ABC, a `Protocol` that mypy checks, choosing between them |
+| 17 | Iterators, Generators, and Classic Coroutines | 593-656 (PDF 623-686) | Iterable vs iterator; how `iter()` works; generator functions and lazy evaluation; generator expressions; `itertools`; `yield from`; `Iterator`/`Generator` hints; classic coroutines (skim) | A custom iterator, rewriting it as a generator, lazy pipelines over a log file |
+| 18 | with, match, and else Blocks | 657-694 (PDF 687-724) | Context managers (`__enter__`/`__exit__`, exceptions in `__exit__`); `contextlib` (`@contextmanager`, `suppress`, `ExitStack`); `match` in depth; `else` on `for`, `while` and `try` | A timer context manager both ways, cleanup with `ExitStack`, `for`/`else` searches |
+
+**Order:** 5 first, since it builds on Ch 8's type hints. 13 then joins Ch 8's `Protocol` with Ch 14's ABCs. 17 comes before 18 because `@contextmanager` is built on generators.
+
+**If time is short:** do 17 and 18 first (make 18's `@contextmanager` part optional). Generators and context managers come up constantly in reliability code: streaming logs, and cleaning up connections and locks.
+
+**Effort:** about 12-15 hours more. Ch 17 is the longest; the classic coroutines section can be skimmed, because modern code uses `async`/`await` instead.
