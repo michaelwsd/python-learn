@@ -1,3 +1,10 @@
+<!doctype html>
+<!--
+  Source for docs/k8s-layers.pdf (also opens as an interactive page in a browser). To rebuild the PDF, from the repo root:
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
+    --no-pdf-header-footer --print-to-pdf=docs/k8s-layers.pdf docs/src/k8s-layers.html
+-->
+<meta charset="utf-8">
 <title>Kubernetes From the Ground Up</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -443,6 +450,48 @@ svg.hub { width: 100%; min-width: 560px; height: auto; display: block; }
 .ref td code { white-space: nowrap; }
 .ref tr.grp td { font: 600 0.7rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--part); padding-top: 1rem; border-bottom: 1.5px solid var(--part); }
 footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 1.2rem; }
+
+/* ---------- print (PDF): one column, every part on a new page, all steps and "See it on minikube" boxes shown ---------- */
+.print-only { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm 14mm 16mm;
+    @bottom-left { content: "Kubernetes From the Ground Up"; font: 8pt -apple-system, Helvetica, sans-serif; color: #566A69; }
+    @bottom-right { content: counter(page) " / " counter(pages); font: 8pt -apple-system, Helvetica, sans-serif; color: #566A69; } }
+  @page :first { @bottom-left { content: none; } }
+  html { font-size: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff; font-size: 12.5px; padding: 0; }
+  body::before, .toc, .btns, .screen-only, details.try summary::before { display: none !important; }
+  .print-only { display: block; }
+  .shell { display: block; padding: 0; }
+  main, .layer { display: block; }
+  main > section + section { margin-top: 2.2rem; }
+  .layer > * + * { margin-top: 1.1rem; }
+  .layer-head { display: block; break-inside: avoid; }
+  /* fit A4 Node + A5 Cluster (end of Part A) on one page */
+  #node > * + *, #cluster > * + * { margin-top: 0.5rem; }
+  main > section#cluster { margin-top: 1rem; }
+  #cluster .aside { padding-block: 0.5rem; align-items: center; }
+  #cluster .aside .mk br { display: none; }
+  #cluster .aside .mk .cpx, #cluster .aside .mk .wlx { margin-inline: 0.4em; }
+  #cluster .aside .mk { padding: 0.3rem 0.5rem; white-space: nowrap; }
+  #cluster .handoff { padding-top: 0.6rem; }
+  .layer-head > * + * { margin-top: 0.45rem; }
+  .layer-head > .num { display: block; }
+  .part, #ref { break-before: page; }
+  .viz, .band, .box, .aside, pre, .points li, .handoff, details.try, .part, .estep, .ref tr, .ro-print li { break-inside: avoid; }
+  .layer-head, .viz-title { break-after: avoid; }
+  .scroll-x { overflow: visible; }
+  .e2e, .ref { min-width: 0; }
+  .estep.on { background: none; box-shadow: none; }
+  .estep .bar, .estep.on .bar { background: var(--cp); }
+  details.try::details-content { content-visibility: visible; display: block; }
+  details.try summary { color: var(--ink); }
+  .ro-print { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.6rem; }
+  .ro-print li { display: grid; grid-template-columns: 4.5rem 9rem 9rem minmax(0, 1fr); gap: 0.6rem; align-items: start; font-size: 0.93rem; }
+  .ro-print .sn { font: 600 0.72rem var(--f-mono); color: var(--muted); padding-top: 0.15rem; }
+  .ro-print .dots { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+  .ro-print .rsl { font: 600 0.66rem var(--f-mono); color: var(--muted); display: block; margin-bottom: 0.15rem; }
+}
 </style>
 
 <div class="shell">
@@ -858,7 +907,8 @@ kubectl get pods -l 'app=web,env=prod'    <span class="c"># comma means AND</spa
             <div class="meter">Pods serving <b id="ro-serving">4</b> / min 3</div>
           </div>
         </div>
-        <p class="step-text" id="ro-text"></p>
+        <p class="step-text screen-only" id="ro-text"></p>
+        <ol class="ro-print print-only" id="ro-print"></ol>
         <div class="btns">
           <button type="button" id="ro-prev">Back</button>
           <button type="button" id="ro-next" class="primary">Next step</button>
@@ -1262,9 +1312,12 @@ spec:
     { a: [], b: [1, 1, 1, 1], t: 'Done. All 4 Pods run nginx:1.28. web-5f8c stays at 0 replicas, so <code>kubectl rollout undo</code> can scale it back up the same way.' },
   ];
   let roI = 0;
+  const dots = (arr, cls) => arr.length ? arr.map((r) => `<i class="dot ${cls}${r ? '' : ' start'}" title="${r ? 'ready' : 'starting'}"></i>`).join('') : '<span class="dot-none">0 replicas</span>';
+  $('#ro-print').innerHTML = ro.map((s, i) => `<li><span class="sn">Step ${i + 1}</span>` +
+    `<div><span class="rsl">web-5f8c (1.27)</span><div class="dots">${dots(s.a, 'v1')}</div></div>` +
+    `<div><span class="rsl">web-7d4b (1.28)</span><div class="dots">${dots(s.b, 'v2')}</div></div><p>${s.t}</p></li>`).join('');
   function roRender() {
     const s = ro[roI];
-    const dots = (arr, cls) => arr.length ? arr.map((r) => `<i class="dot ${cls}${r ? '' : ' start'}" title="${r ? 'ready' : 'starting'}"></i>`).join('') : '<span class="dot-none">0 replicas</span>';
     $('#ro-a').innerHTML = dots(s.a, 'v1');
     $('#ro-b').innerHTML = dots(s.b, 'v2');
     $('#ro-total').textContent = s.a.length + s.b.length;
@@ -1329,5 +1382,9 @@ spec:
   $('#e2e-next').addEventListener('click', () => { eI = eI === steps.length - 1 ? 0 : eI + 1; eRender(); });
   $('#e2e-prev').addEventListener('click', () => { eI = Math.max(0, eI - 1); eRender(); });
   eRender();
+
+  /* ---- print: expand every "See it on minikube" box ---- */
+  const openAll = () => document.querySelectorAll('details.try').forEach((d) => { d.open = true; });
+  addEventListener('beforeprint', openAll);
 })();
 </script>

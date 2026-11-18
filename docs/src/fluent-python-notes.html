@@ -1,0 +1,250 @@
+<!doctype html>
+<!--
+  Source for docs/fluent-python-notes.pdf. To rebuild after editing, from the repo root:
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
+    --no-pdf-header-footer --print-to-pdf=docs/fluent-python-notes.pdf docs/src/fluent-python-notes.html
+  To add a chapter: add a .ci line to the contents, then copy a <section class="ch"> block.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fluent Python Notes</title>
+<style>
+  @page { size: A4; margin: 16mm 16mm 18mm 16mm;
+    @bottom-right { content: counter(page) " / " counter(pages); font: 8pt -apple-system, Helvetica, Arial, sans-serif; color: #5b6475; }
+    @bottom-left { content: "Fluent Python Notes"; font: 8pt -apple-system, Helvetica, Arial, sans-serif; color: #5b6475; } }
+  @page :first { @bottom-left { content: none; } }
+  :root {
+    --ink: #1c2230; --muted: #5b6475; --line: #dde2ea; --soft: #f5f7fa;
+    --py: #2f5fb3; --py-soft: #eaf0fb;
+    --warn: #a86a00; --warn-soft: #fdf4e3;
+    --ok: #1d7a3a; --bad: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; color: var(--ink); background: #fff; font: 9.6pt/1.45 -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  code { font-family: Menlo, "SF Mono", Consolas, monospace; font-size: 8.6pt; background: var(--soft); border: 1px solid var(--line); border-radius: 3px; padding: 0 3px; white-space: nowrap; }
+  pre { margin: 6px 0; padding: 8px 10px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px;
+        font-family: Menlo, "SF Mono", Consolas, monospace; font-size: 8.4pt; line-height: 1.45; white-space: pre-wrap; break-inside: avoid; }
+  pre .c { color: var(--muted); }
+  pre .ok { color: var(--ok); font-weight: 700; }
+  pre .bad { color: var(--bad); font-weight: 700; }
+  p { margin: 4px 0; }
+  b { font-weight: 650; }
+  ol, ul { margin: 4px 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+
+  /* Cover */
+  .cover { padding: 40px 0 0; }
+  .cover .head { padding-bottom: 16px; border-bottom: 2px solid var(--ink); }
+  .kicker { text-transform: uppercase; letter-spacing: .12em; font-size: 8pt; color: var(--muted); font-weight: 600; }
+  .cover h1 { font-size: 28pt; line-height: 1.15; margin: 4px 0; letter-spacing: -.01em; }
+  .cover .sub { color: var(--muted); font-size: 10.5pt; }
+  .contents { display: grid; gap: 8px; margin-top: 22px; }
+  .contents::before { content: "Contents"; font-size: 8pt; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+  .ci { display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .ci b { display: block; font-size: 11pt; margin-bottom: 2px; }
+  .ci span:not(.cn) { color: var(--muted); font-size: 9pt; }
+  .cn { width: 28px; height: 28px; border-radius: 6px; color: #fff; background: var(--py); font-weight: 700; display: grid; place-items: center; font-size: 11pt; }
+
+  /* Chapters */
+  section.ch { break-before: page; }
+  h2 { font-size: 15pt; margin: 0 0 4px; padding: 5px 10px; border-radius: 6px; color: #fff; background: var(--py); }
+  h2 .n { opacity: .75; font-weight: 500; margin-right: 6px; }
+  .meta { color: var(--muted); font-size: 8.8pt; margin: 0 0 8px; }
+  h3 { font-size: 11.5pt; color: var(--py); margin: 10px 0 5px; padding-bottom: 3px; border-bottom: 1px solid var(--line); break-after: avoid; }
+  .keep { break-inside: avoid; }
+  h3.newpage { break-before: page; margin-top: 0; }
+
+  .lead { border-left: 4px solid var(--py); background: var(--py-soft); padding: 8px 12px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 10.4pt; break-inside: avoid; }
+  .note { border-left: 4px solid var(--warn); background: var(--warn-soft); padding: 6px 10px; border-radius: 0 6px 6px 0; margin: 8px 0; break-inside: avoid; }
+  .note .t { font-weight: 650; display: block; }
+
+  .two { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; align-items: start; }
+  .two pre { margin: 0; }
+  .two.t { grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr); }
+  .two.w { grid-template-columns: minmax(0,1.25fr) minmax(0,.75fr); }
+  table.nw td code { white-space: nowrap; }
+
+  table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 9.2pt; }
+  th, td { text-align: left; vertical-align: top; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+  th { background: var(--soft); font-size: 8.2pt; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+  tr { break-inside: avoid; }
+  thead { display: table-header-group; }
+
+  /* Collection ABC tree */
+  .tree { display: grid; gap: 6px; margin: 8px 0; break-inside: avoid; font-size: 8.8pt; }
+  .row { display: grid; gap: 8px; }
+  .row.r3 { grid-template-columns: repeat(3, 1fr); }
+  .abc { border: 1.5px solid var(--py); border-radius: 6px; padding: 4px 8px; text-align: center; background: #fff; }
+  .abc b { display: block; font-size: 9.4pt; }
+  .abc i { font-family: Menlo, monospace; font-size: 8pt; }
+  .abc small { display: block; color: var(--muted); font-size: 7.8pt; }
+  .abc.mid { background: var(--py-soft); width: 46%; margin: 0 auto; }
+  .arrow { text-align: center; color: var(--muted); font-size: 8pt; line-height: 1; }
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="head">
+    <div class="kicker">Fluent Python, 2nd edition · Luciano Ramalho</div>
+    <h1>Fluent Python Notes</h1>
+    <div class="sub">My notes, chapter by chapter, with runnable examples</div>
+  </div>
+  <nav class="contents">
+    <div class="ci"><span class="cn">1</span><div><b>The Python Data Model</b><span>What the data model is · why <code>len()</code> is fast · <code>__repr__</code> vs <code>__str__</code> · truthiness · the Collection API</span></div></div>
+  </nav>
+</header>
+
+<!-- ======================= CHAPTER 1 ======================= -->
+<section class="ch">
+<h2><span class="n">1</span>The Python Data Model</h2>
+<p class="meta">Book pages 3-20 · code in <code>fluent-python/ch01/</code></p>
+
+<div class="lead">The Python data model maps Python's <b>syntax and built-in functions</b> to <b>special methods</b>. Implementing the right special methods lets your objects work with that normal syntax, the same way built-in types do. That's what makes them <b>pythonic</b>.</div>
+
+<div class="two keep t">
+<table class="nw">
+<thead><tr><th>You write</th><th>Python calls</th></tr></thead>
+<tbody>
+<tr><td><code>len(deck)</code></td><td><code>__len__</code></td></tr>
+<tr><td><code>deck[0]</code> <code>deck[1:3]</code></td><td><code>__getitem__</code></td></tr>
+<tr><td><code>for c in deck</code> <code>x in deck</code></td><td><code>__iter__</code> <code>__contains__</code></td></tr>
+<tr><td><code>v1 + v2</code> <code>v * 3</code> <code>abs(v)</code></td><td><code>__add__</code> <code>__mul__</code> <code>__abs__</code></td></tr>
+<tr><td><code>repr(v)</code> <code>print(v)</code> <code>if v:</code></td><td><code>__repr__</code> <code>__str__</code> <code>__bool__</code></td></tr>
+</tbody>
+</table>
+<pre><span class="c"># FrenchDeck: two methods, a full sequence</span>
+class FrenchDeck:
+    def __init__(self):
+        self._cards = [...]  <span class="c"># 52 Cards</span>
+    def __len__(self):
+        return len(self._cards)
+    def __getitem__(self, position):
+        return self._cards[position]
+
+len(deck)            <span class="c"># 52</span>
+deck[:3]             <span class="c"># slicing</span>
+Card('Q', 'hearts') in deck   <span class="c"># True</span>
+random.choice(deck)  <span class="c"># stdlib works too</span></pre>
+</div>
+<p>Rule: Python calls special methods, <b>you don't</b>. Write <code>len(x)</code>, never <code>x.__len__()</code>.</p>
+
+<h3>Why <code>len()</code> is fast for built-in types</h3>
+<div class="two keep w">
+<ol>
+  <li>Python itself is written in C. The standard Python you run is called <b>CPython</b>. Every Python object, such as a list, is a block of memory laid out as a C <b>struct</b>: a fixed record with named fields.</li>
+  <li>Lists, strings and other collections whose size can change all start with the same struct, <code>PyVarObject</code>. One of its fields, <code>ob_size</code>, holds the current number of items. The list updates it on every <code>append</code> or <code>pop</code>, so <code>len(my_list)</code> <b>just reads that field</b>.</li>
+  <li>Your own class takes the slow route. For <code>len(deck)</code>, Python has to find <code>__len__</code> on the class, set up a Python function call, and run your code, which here calls <code>len()</code> on the inner list. Same answer, several extra steps.</li>
+</ol>
+<div>
+<pre><span class="c"># a list in memory (simplified)</span>
+list object
+├── ob_refcnt
+├── ob_type   = list
+├── ob_size  = 1000 <span class="c">← len() reads</span>
+└── ob_item  → [items...]
+
+<span class="c"># 5 million calls each (measured)</span>
+len(list)    0.09s
+len(MyList)  0.22s</pre>
+</div>
+</div>
+<p>This is why <code>len</code> is a <b>function</b>, not a method: one syntax for everything, with a fast path for built-ins.</p>
+
+<h3><code>__repr__</code> vs <code>__str__</code></h3>
+<p><code>__repr__</code> is for <b>developers</b>: it should show exactly what the object is, ideally looking like the code that recreates it. <code>__str__</code> is for <b>end users</b>: it just has to be readable. <code>print()</code> calls <code>str()</code>, which uses <code>__str__</code>; if a class has no <code>__str__</code>, it uses <code>__repr__</code> instead. So <b>if you write only one, write <code>__repr__</code></b>.</p>
+<div class="two keep">
+<table>
+<thead><tr><th></th><th><code>repr(x)</code></th><th><code>str(x)</code></th></tr></thead>
+<tbody>
+<tr><td><b>For</b></td><td>developers: unambiguous</td><td>end users: readable</td></tr>
+<tr><td><b>Used by</b></td><td>console echo, debugger, items <b>inside containers</b>, <code>f"{x!r}"</code></td><td><code>print(x)</code>, <code>f"{x}"</code></td></tr>
+<tr><td><b>Fallback</b></td><td><code>&lt;Vector object at 0x...&gt;</code></td><td>uses <code>__repr__</code></td></tr>
+</tbody>
+</table>
+<pre>&gt;&gt;&gt; d = date(2026, 11, 18)
+&gt;&gt;&gt; repr(d)
+'datetime.date(2026, 11, 18)'  <span class="c"># valid code</span>
+&gt;&gt;&gt; str(d)
+'2026-11-18'                   <span class="c"># friendly</span>
+&gt;&gt;&gt; print([d])    <span class="c"># list items use repr</span>
+[datetime.date(2026, 11, 18)]
+&gt;&gt;&gt; print(repr("42"), repr(42))
+'42' 42          <span class="c"># str vs int: clear</span></pre>
+</div>
+<p>That's why the chapter's Vector uses <code>!r</code>: <code>f"Vector({self.x!r}, {self.y!r})"</code>.</p>
+
+<h3 class="newpage">Truthiness: <code>bool(x)</code></h3>
+<div class="two keep">
+<div>
+<p><code>bool()</code>, <code>if x:</code> and <code>while x:</code> check, in order:</p>
+<ol>
+  <li><code>__bool__</code>, if defined: use its result (it must return an actual <code>bool</code>).</li>
+  <li>Otherwise <code>__len__</code>: falsy if it returns <code>0</code>.</li>
+  <li>Otherwise: <b>always truthy</b>.</li>
+</ol>
+<p>So a collection with only <code>__len__</code> is falsy when empty, like <code>[]</code> and <code>""</code>.</p>
+</div>
+<pre><span class="c"># Vector: falsy only for Vector(0, 0)</span>
+def __bool__(self):
+    return bool(abs(self))
+
+<span class="c"># faster: skips the square root</span>
+def __bool__(self):
+    return bool(self.x or self.y)
+<span class="c"># `or` returns an operand (e.g. 3), not</span>
+<span class="c"># a bool: hence the bool(...) wrapper.</span>
+<span class="c"># bool(3) runs int's __bool__, not</span>
+<span class="c"># Vector's: no recursion.</span></pre>
+</div>
+
+<h3>The Collection API</h3>
+<p><code>Collection</code> combines <code>Iterable</code> (<code>__iter__</code>), <code>Sized</code> (<code>__len__</code>) and <code>Container</code> (<code>__contains__</code>) by <b>multiple inheritance</b>: <code>class Collection(Sized, Iterable, Container)</code>. Together these define what a collection is: something you can <b>loop over, measure and search</b>. The three main kinds, <code>Sequence</code>, <code>Mapping</code> and <code>Set</code>, are each a Collection with extra methods of their own. The ABCs (abstract base classes, in <code>collections.abc</code>) mark the core methods as <b>required</b> and provide the rest <b>for free</b>, built from those.</p>
+
+<div class="tree">
+  <div class="row r3">
+    <div class="abc"><b>Iterable</b><i>__iter__</i><small>loop over: for x in c</small></div>
+    <div class="abc"><b>Sized</b><i>__len__</i><small>measure: len(c)</small></div>
+    <div class="abc"><b>Container</b><i>__contains__</i><small>search: x in c</small></div>
+  </div>
+  <div class="arrow">▼ &nbsp; all three combined &nbsp; ▼</div>
+  <div class="abc mid"><b>Collection</b><small>adds no methods of its own</small></div>
+  <div class="arrow">▼ &nbsp; each adds its own methods &nbsp; ▼</div>
+  <div class="row r3">
+    <div class="abc"><b>Sequence</b><small>list, tuple, str · by position</small><small>+ <i>__getitem__</i>, index, count, __reversed__</small></div>
+    <div class="abc"><b>Mapping</b><small>dict · by key</small><small>+ <i>__getitem__</i>, get, keys, items, values</small></div>
+    <div class="abc"><b>Set</b><small>set, frozenset · set maths</small><small>+ &amp; | - ^ &lt;= operators, isdisjoint</small></div>
+  </div>
+</div>
+
+<div class="two keep">
+<pre>from collections.abc import Sequence
+
+class Playlist(Sequence):
+    def __init__(self, songs):
+        self._songs = list(songs)
+    def __getitem__(self, i):     <span class="c"># required</span>
+        return self._songs[i]
+    def __len__(self):            <span class="c"># required</span>
+        return len(self._songs)
+
+p = Playlist(["a", "b", "a"])
+p.count("a")       <span class="c"># 2      free</span>
+p.index("b")       <span class="c"># 1      free</span>
+"b" in p           <span class="c"># True   free</span>
+list(reversed(p))  <span class="c">#        free</span></pre>
+<div>
+<p><b>Reading the book's diagram (Figure 1-2):</b> arrows mean "inherits from". <i>Italic</i> methods are <b>abstract</b>: you must write them. Plain ones are <b>concrete</b>: inherited for free.</p>
+<p>Leave out a required method and Python refuses:</p>
+<pre><span class="bad">TypeError</span>: Can't instantiate abstract class
+Bad without an implementation for
+abstract method '__getitem__'</pre>
+<p>FrenchDeck doesn't inherit from <code>Sequence</code>, yet <code>in</code>, <code>for</code> and <code>reversed</code> still work through Python's fallbacks to <code>__getitem__</code>. Inheriting adds <code>index</code>/<code>count</code> and makes <code>isinstance(deck, Sequence)</code> True.</p>
+</div>
+</div>
+</section>
+
+</body>
+</html>

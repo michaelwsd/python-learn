@@ -22,10 +22,10 @@ class Playlist:
         self._songs = list(songs)
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self._songs)
 
     def __getitem__(self, position):
-        raise NotImplementedError
+        return self._songs[position]
 
 
 # Exercise 2: more operators for Vector
@@ -58,16 +58,16 @@ class Vector:
         return Vector(self.x * scalar, self.y * scalar)
 
     def __eq__(self, other):
-        raise NotImplementedError
+        return self.x == other.x and self.y == other.y
 
     def __sub__(self, other):
-        raise NotImplementedError
+        return Vector(self.x - other.x, self.y - other.y)
 
     def __neg__(self):
-        raise NotImplementedError
+        return Vector(-self.x, -self.y)
 
     def __rmul__(self, scalar):
-        raise NotImplementedError
+        return Vector(scalar * self.x, scalar * self.y)
 
 
 # Exercise 3: __repr__ vs __str__
@@ -79,10 +79,10 @@ class Temperature:
         self.celsius = celsius
 
     def __repr__(self):
-        raise NotImplementedError
+        return f'Temperature({self.celsius})'
 
     def __str__(self):
-        raise NotImplementedError
+        return f'{self.celsius}°C'
 
 
 # Exercise 4: truthiness without __bool__
@@ -94,4 +94,4 @@ class Inbox:
         self._messages = list(messages)
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self._messages)
