@@ -92,10 +92,21 @@
   .abc b { display: block; font-size: 9.4pt; }
   .abc i { font-family: Menlo, monospace; font-size: 8pt; }
   .abc small { display: block; color: var(--muted); font-size: 7.8pt; }
-  .ch2 h3 { margin: 8px 0 4px; }
-  .ch2 p { margin: 3px 0; }
-  .ch2 .two { gap: 8px; }
-  .ch2 table { margin: 4px 0; }
+  .ch2 h3, .ch3 h3 { margin: 8px 0 4px; }
+  .ch2 p, .ch3 p { margin: 3px 0; }
+  .ch2 .two, .ch3 .two { gap: 8px; }
+  .ch2 table, .ch3 table { margin: 4px 0; }
+  .ch3 > * { margin-top: 0; margin-bottom: 0; }
+  .ch3 > h3 { margin: 14px 0 6px; }
+  .ch3 > .meta { margin-bottom: 8px; }
+  .ch3 .two > * > :last-child, .ch3 > div > :last-child { margin-bottom: 0; }
+  .ch3 > .two > pre, .ch3 > .two > div > pre:last-child { margin-bottom: 0; }
+  table.var td { vertical-align: middle; padding: 5px 8px; }
+  th.c, td.c { text-align: center; width: 9%; }
+  th.c code { text-transform: none; letter-spacing: 0; }
+  td.yes { color: var(--ok); font-weight: 700; }
+  td.no { color: var(--bad); font-weight: 700; }
+  table.var td pre { margin: 0; padding: 5px 8px; }
   tr.nb td { border-bottom: 0; padding-bottom: 1px; }
   tr.nb td[rowspan] { border-bottom: 1px solid var(--line); }
   .row.r2 { grid-template-columns: 1fr 1fr; }
@@ -117,6 +128,7 @@
   <nav class="contents">
     <div class="ci"><span class="cn">1</span><div><b>The Python Data Model</b><span>What the data model is · why <code>len()</code> is fast · <code>__repr__</code> vs <code>__str__</code> · truthiness · the Collection API · common special methods</span></div></div>
     <div class="ci"><span class="cn">2</span><div><b>An Array of Sequences</b><span>Container vs Flat · Mutable vs Immutable · genexps and the walrus · tuples · <code>match</code>/<code>case</code> · slicing · list alternatives · threads, the GIL and asyncio</span></div></div>
+    <div class="ci"><span class="cn">3</span><div><b>Dictionaries and Sets</b><span>Dict comprehensions · <code>**</code> and <code>|</code> · mapping patterns · Mapping ABCs · hashability · <code>UserDict</code> · <code>__missing__</code> and <code>defaultdict</code> · variations of dict · <code>MappingProxyType</code> · how dict works · set theory · set operations</span></div></div>
   </nav>
 </header>
 
@@ -541,6 +553,277 @@ T4    █···· waiting ····
 </tbody>
 </table>
 <p class="muted">Each thread runs at most one event loop: usually one in the main thread, with <code>asyncio.to_thread(func)</code> for blocking calls. Python 3.13+ has an optional GIL-free build (PEP 703).</p>
+</section>
+
+<!-- ======================= CHAPTER 3 ======================= -->
+<section class="ch ch3">
+<h2><span class="n">3</span>Dictionaries and Sets</h2>
+<p class="meta">Book pages 77-114 · code in <code>fluent-python/ch03/</code></p>
+
+<div class="lead">Dicts are everywhere: module namespaces, <code>obj.__dict__</code> and keyword arguments are all dicts. <code>dict</code>, <code>set</code> and <code>frozenset</code> are <b>hash tables</b>: lookups are fast, and <b>keys must be hashable</b>.</div>
+
+<h3>Modern dict syntax</h3>
+<div class="two keep">
+<div>
+<p><b>Dict comprehensions</b> build <code>key: value</code> pairs, optionally sorted and filtered.</p>
+<p><b><code>**</code> unpacking:</b> in a <b>call</b>, keys must be unique strings; in a <b>literal</b>, duplicates are fine and <b>the later one wins</b>.</p>
+<p><b>Merging (3.9+):</b> <code>d1 | d2</code> returns a <b>new</b> dict; <code>d1 |= d2</code> updates <code>d1</code> <b>in place</b>. The right side wins clashes.</p>
+</div>
+<pre>{name: code for code, name in dial_codes}
+{code: name.upper()
+ for name, code in sorted(d.items())
+ if code &lt; 70}
+
+dump(**{'x': 1}, y=2, **{'z': 3})
+<span class="c"># kwargs = {'x': 1, 'y': 2, 'z': 3}</span>
+{'a': 0, **{'x': 1}, **{'x': 4}}
+<span class="c"># {'a': 0, 'x': 4}   later x wins</span>
+
+config = defaults | user_settings <span class="c"># new dict</span>
+d1 |= d2                          <span class="c"># in place</span></pre>
+</div>
+
+<h3>Pattern matching with mappings</h3>
+<div class="two keep">
+<pre>match record:
+    case {'type': 'book', 'api': 2,
+          'authors': [*names]}:
+        return names
+    case {'type': 'book', 'api': 1,
+          'author': name}:
+        return [name]
+    case {'type': 'book'}:       <span class="c"># known type,</span>
+        raise ValueError(...)    <span class="c"># bad record</span>
+    case {'type': 'movie', 'director': name}:
+        return [name]
+    case _:                      <span class="c"># catch-all</span>
+        raise ValueError(...)
+
+case {'category': 'ice cream', **details}:
+    <span class="c"># details = all the OTHER keys</span></pre>
+<div>
+<p>A mapping pattern means <i>"has these keys, with values matching these patterns"</i>. Values can be any pattern, including sequence patterns.</p>
+<p><b>Partial matches succeed:</b> <b>extra keys are ignored</b> and order doesn't matter (sequence patterns need an exact length). Ideal for JSON-like records.</p>
+<p><code>**rest</code> captures the extra keys; it must come <b>last</b>. <code>**_</code> is not allowed.</p>
+<p>Lookups use <code>d.get(key, sentinel)</code>, so a <code>defaultdict</code> never invents keys during a match.</p>
+<p><b>For records:</b> include a <b>type</b> field and a <b>schema version</b> field, and add a case for <b>invalid records of a known type</b> plus a catch-all.</p>
+</div>
+</div>
+
+<h3>What is hashable</h3>
+<div class="two keep">
+<div>
+<p>Hashable means: the <b>hash never changes</b> (<code>__hash__</code>), the object supports <code>==</code> (<code>__eq__</code>), and <b>equal objects have equal hashes</b>. A dict finds keys by hash first, so equal keys with different hashes would never be found.</p>
+<p><b>Your classes</b> hash by <code>id()</code> by default. Defining <code>__eq__</code> sets <code>__hash__</code> to <code>None</code>; to fix it, hash the <b>same attributes as <code>__eq__</code></b>, and keep them unchanging.</p>
+<p><code>str</code>/<code>bytes</code> hashes are salted per process: never store them.</p>
+</div>
+<div>
+<table class="nw">
+<thead><tr><th>Type</th><th>Hashable?</th></tr></thead>
+<tbody>
+<tr><td><code>int</code> <code>float</code> <code>str</code> <code>bytes</code></td><td>yes: immutable, flat</td></tr>
+<tr><td><code>frozenset</code></td><td>always</td></tr>
+<tr><td><code>tuple</code></td><td><b>only if every item is</b></td></tr>
+<tr><td><code>list</code> <code>dict</code> <code>set</code></td><td>no: mutable</td></tr>
+</tbody>
+</table>
+<pre>hash((1, 2, (30, 40)))   <span class="c"># works</span>
+hash((1, 2, [30, 40]))   <span class="c"># TypeError: 'list'</span>
+{1: 'a', 1.0: 'b'}       <span class="c"># {1: 'b'}: 1 == 1.0</span></pre>
+</div>
+</div>
+
+<h3>Mapping ABCs, <code>dict</code> and <code>UserDict</code></h3>
+<div class="two keep">
+<div>
+<div class="tree" style="margin:2px 0 6px">
+  <div class="row r2">
+    <div class="abc"><b>Mapping</b><small>read by key: <i>__getitem__ __len__ __iter__</i> get keys items values == in</small></div>
+    <div class="abc mid2"><b>MutableMapping</b><small>+ <i>__setitem__ __delitem__</i> pop popitem update setdefault clear</small></div>
+  </div>
+</div>
+<p>Check <code>isinstance(x, abc.Mapping)</code>, not <code>dict</code>, to also accept <code>MappingProxyType</code>, <code>ChainMap</code> and <code>UserDict</code>.</p>
+<p><b><code>dict</code></b> is a concrete C class. Like <code>list</code>, it is <b>registered</b> as a virtual subclass: <code>MutableMapping.register(dict)</code>.</p>
+<pre style="margin-top:4px">dict.__mro__     <span class="c"># (dict, object)</span>
+issubclass(dict, MutableMapping)  <span class="c"># True</span></pre>
+</div>
+<div>
+<p><b><code>UserDict</code></b> is the base for <b>your own mappings</b>: plain Python, a real <code>MutableMapping</code> subclass, storing a dict in <code>self.data</code>.</p>
+<p>Why not subclass <code>dict</code>? Its C methods (constructor, <code>update</code>, <code>get</code>, <code>in</code>) <b>skip your overrides</b>. <code>UserDict</code>'s methods go through <code>self[k]</code>, so <b>one override covers every path</b>.</p>
+<pre><span class="c"># override __setitem__ to store str(k)</span>
+<span class="c"># x = X({1: 'a'}); x[2] = 'b'</span>
+<span class="c"># x.update({3: 'c'}); then the stored keys:</span>
+D(dict):     {1: 'a', '2': 'b', 3: 'c'}  <span class="bad">✗</span>
+U(UserDict): {'1': 'a', '2': 'b', '3': 'c'} <span class="ok">✓</span></pre>
+<p class="muted">Write to <code>self.data</code>, not <code>self</code>, or it recurses.</p>
+</div>
+</div>
+
+<h3>Missing keys: <code>__missing__</code> and <code>defaultdict</code></h3>
+<div class="two keep">
+<div>
+<p>When <code>d[k]</code> misses, <code>dict.__getitem__</code> calls <code>__missing__(k)</code> if the subclass defines it, instead of raising <code>KeyError</code>.</p>
+<p><b><code>defaultdict</code> is exactly this:</b> a dict subclass whose <code>__missing__</code> calls <code>default_factory()</code>, stores the result under <code>k</code> and returns it.</p>
+</div>
+<div>
+<p><b>To build a custom dict, subclass <code>UserDict</code>.</b> When you add <code>__missing__</code> to it, override <code>__contains__</code> too, so <code>in</code> and <code>get</code> agree with <code>d[k]</code>.</p>
+</div>
+</div>
+
+<div class="keep" style="margin-top:8px"><p><b>Writing your own <code>__missing__</code>:</b> lookups that use it with <b>only</b> <code>__missing__</code> defined, and how to fix each ✗.</p>
+<table>
+<thead><tr><th style="width:20%">Subclass</th><th class="c"><code>d[k]</code></th><th class="c"><code>d.get(k)</code></th><th class="c"><code>k in d</code></th><th>What to override</th></tr></thead>
+<tbody>
+<tr><td><code>dict</code></td><td class="c yes">✓</td><td class="c no">✗</td><td class="c no">✗</td><td><code>get</code> <b>and</b> <code>__contains__</code> (separate C code)</td></tr>
+<tr><td><code>UserDict</code> <span class="muted">(3.12+)</span></td><td class="c yes">✓</td><td class="c no">✗</td><td class="c no">✗</td><td><code>__contains__</code>: fixes <code>get</code> too, which checks <code>in</code> first</td></tr>
+<tr><td><code>Mapping</code></td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c yes">✓</td><td>nothing, if <code>__getitem__</code> calls it (all use <code>self[k]</code>)</td></tr>
+</tbody>
+</table></div>
+
+<h3>Variations of dict</h3>
+<table class="var">
+<thead><tr><th style="width:15%">Type</th><th style="width:50%">Demo</th><th>Use when</th></tr></thead>
+<tbody>
+<tr><td><code>OrderedDict</code><br><span class="muted">collections</span></td><td><pre>od = OrderedDict(a=1, b=2, c=3)
+od.move_to_end('a')       <span class="c"># b, c, a</span>
+od.popitem(last=False)    <span class="c"># ('b', 2): FIFO</span>
+od == OrderedDict(a=1, c=3)  <span class="c"># False</span></pre></td><td>Order matters for equality, or you reorder often, e.g. an <b>LRU cache</b>: <code>move_to_end</code> on access, <code>popitem(last=False)</code> to evict. Plain <code>dict</code> already keeps insertion order.</td></tr>
+<tr><td><code>ChainMap</code><br><span class="muted">collections</span></td><td><pre>defaults = {'timeout': 30, 'retries': 3}
+env = {'retries': 10}  <span class="c"># env variables</span>
+cli = {'timeout': 5}   <span class="c"># command line</span>
+cfg = ChainMap(cli, env, defaults)
+cfg['timeout']  <span class="c"># 5   found in cli</span>
+cfg['retries']  <span class="c"># 10  not in cli: env</span>
+cfg['x'] = 1    <span class="c"># writes go to cli only</span></pre></td><td>One value, <b>several sources with a priority order</b>: lookups search the dicts left to right and the <b>first one with the key wins</b>. Nothing is copied: changes reflect on the input dicts.</td></tr>
+<tr><td><code>Counter</code><br><span class="muted">collections</span></td><td><pre>ct = Counter('abracadabra')  <span class="c"># a: 5, b: 2</span>
+ct.update('aaz')     <span class="c"># +1 per item: a 7, z 1</span>
+ct.subtract('az')    <span class="c"># -1 per item: a 6, z 0</span>
+ct.update({'b': 3})  <span class="c"># mapping adds: b 5</span>
+ct.most_common(2)    <span class="c"># [('a', 6), ('b', 5)]</span>
+ct['?']              <span class="c"># 0, no KeyError</span></pre></td><td><b>Counting</b>, top-N, and combining tallies: <code>+</code> <code>-</code> <code>&amp;</code> (min) <code>|</code> (max). A multiset.</td></tr>
+<tr><td><code>Shelf</code><br><span class="muted">shelve</span></td><td><pre><span class="c"># run 1: save</span>
+with shelve.open('db') as db:  <span class="c"># file db.db</span>
+    db['cfg'] = [1, 2]  <span class="c"># value pickled</span>
+<span class="c"># run 2, later: load</span>
+with shelve.open('db') as db:
+    db['cfg']           <span class="c"># [1, 2]</span></pre></td><td>A simple <b>dict saved to a file</b> that survives between runs. Keys must be <code>str</code>; values must be <b>picklable</b>: convertible to bytes by <code>pickle</code> (numbers, strings, lists, dicts, your classes; not lambdas or open files). Never load untrusted pickles.</td></tr>
+<tr><td><code>UserDict</code><br><span class="muted">collections</span></td><td><pre>class StrKeyDict(UserDict):
+    def __setitem__(self, key, item):
+        self.data[str(key)] = item</pre></td><td><b>Building your own mapping</b>: only meant to be subclassed. Constructor and <code>update</code> go through your <code>__setitem__</code>.</td></tr>
+</tbody>
+</table>
+
+<h3>Immutable mappings: <code>MappingProxyType</code></h3>
+<div class="two keep">
+<div>
+<p><code>types.MappingProxyType(d)</code> wraps a dict in a <b>read-only, live proxy</b>:</p>
+<ul>
+  <li><b>Read-only:</b> nothing can be added, changed or deleted <i>through the proxy</i>.</li>
+  <li><b>Live:</b> it's a view, not a copy, so changes to <code>d</code> itself show up.</li>
+</ul>
+<p><b>Use when</b> others should read a dict but not change it: keep the real dict private and expose the proxy. It is a <code>Mapping</code> but not a <code>MutableMapping</code>.</p>
+</div>
+<pre>d = {1: 'A'}
+d_proxy = MappingProxyType(d)
+d_proxy[1]        <span class="c"># 'A'</span>
+d_proxy[2] = 'x'  <span class="c"># TypeError</span>
+d[2] = 'B'        <span class="c"># change the original...</span>
+d_proxy           <span class="c"># ...{1: 'A', 2: 'B'}</span>
+class Board:
+    def __init__(self):
+        self._pins = {13: 'LED'}  <span class="c"># private</span>
+        self.pins = MappingProxyType(
+            self._pins)          <span class="c"># public</span></pre>
+</div>
+
+<h3>Practical consequences of how <code>dict</code> works</h3>
+<p>A dict is a hash table: <code>hash(key)</code> picks a slot, and <code>==</code> confirms the key: no scanning. Timings are for 1M lookups.</p>
+<table class="keep">
+<thead><tr><th style="width:25%">Consequence</th><th>Why</th><th style="width:34%">Evidence (3.12)</th></tr></thead>
+<tbody>
+<tr><td><b>1. Keys must be hashable</b></td><td>the hash picks the slot, <code>==</code> confirms it</td><td><code>{[1]: 'a'}</code> → <code>TypeError</code></td></tr>
+<tr><td><b>2. Fast lookup at any size</b></td><td>the hash gives the slot directly</td><td>10 keys 0.014s, 10M keys 0.020s</td></tr>
+<tr><td><b>3. Insertion order kept</b></td><td>compact entry array (3.6), guaranteed since 3.7</td><td><code>{'b': 1, 'a': 2}</code> keeps order b, a</td></tr>
+<tr><td><b>4. High memory use</b></td><td>hash, key, value per entry; ≥ 1/3 of slots empty</td><td>1000 items: tuple 8 KB, dict 37 KB</td></tr>
+<tr><td><b>5. Instances share attribute names</b></td><td colspan="2"><b>Saves memory:</b> each object's <code>__dict__</code> is a <b>split dict</b>: its keys point to one table of names shared by the class, and its values are the object's own array. Needs the same attributes in every object: <b>create them all in <code>__init__</code></b>.
+<pre style="margin:4px 0 0;padding:3px 6px">keys  ['x', 'y']   <span class="c"># one table of names, shared by every Point</span>
+p1    [1, 2]       <span class="c"># p1.__dict__ values: p1's own array</span>
+p2    [5, 9]       <span class="c"># p2.__dict__ values: p2's own array</span></pre></td></tr>
+</tbody>
+</table>
+
+<h3>Set theory</h3>
+<div class="two keep">
+<div>
+<p>A set is a collection of <b>unique</b> objects: <code>set</code> is mutable, <code>frozenset</code> immutable. Basic use: removing duplicates (<code>dict.fromkeys</code> also keeps first-seen order).</p>
+<p>Elements must be <b>hashable</b>. A <code>set</code> isn't, so sets can't nest; a <code>frozenset</code> is, so it can go in a set or be a dict key.</p>
+<p><b>Operators replace loops:</b> <code>|</code> union, <code>&amp;</code> intersection, <code>-</code> difference, <code>^</code> symmetric difference. Operators need sets on both sides; methods (<code>.intersection()</code>, ...) take any iterable.</p>
+<p><b>Literals are faster:</b> <code>{1, 2, 3}</code> compiles to one <code>BUILD_SET</code> instruction; <code>set([1, 2, 3])</code> looks up <code>set</code>, builds a list, then calls it (1M runs: 0.021s vs 0.054s).</p>
+</div>
+<pre>l = ['spam', 'eggs', 'spam']
+set(l)                  <span class="c"># {'eggs', 'spam'}</span>
+list(dict.fromkeys(l))  <span class="c"># ['spam', 'eggs']</span>
+
+{{1, 2}}               <span class="c"># TypeError</span>
+{frozenset({1, 2}), 3} <span class="c"># OK</span>
+
+a = {1, 2, 3}
+b = {2, 3, 4}
+a | b  <span class="c"># {1, 2, 3, 4} union: in either</span>
+a &amp; b  <span class="c"># {2, 3}  intersection: in both</span>
+a - b  <span class="c"># {1}     difference: in a, not b</span>
+a ^ b  <span class="c"># {1, 4}  symmetric: in exactly one</span>
+a &amp; [3, 9]             <span class="c"># TypeError</span>
+a.intersection([3, 9])  <span class="c"># {3}: any iterable</span></pre>
+</div>
+<div class="two keep" style="margin-top:8px">
+<p><b>Like dicts</b> (both are hash tables): elements must be hashable, <code>x in s</code> is fast at any size, and memory use is high.</p>
+<p><b>Unlike dicts: no order.</b> Elements are placed by hash, and adding more can rearrange them. For unique <b>and</b> ordered, use <code>dict.fromkeys</code>.</p>
+</div>
+
+<h3>Set operations</h3>
+<div class="two keep">
+<div>
+<div class="tree" style="margin:2px 0 6px">
+  <div class="row r2">
+    <div class="abc"><b>Set</b><small><i>__contains__ __iter__ __len__</i> &amp; | - ^ &lt;= &lt; &gt;= &gt; == isdisjoint</small></div>
+    <div class="abc mid2"><b>MutableSet</b><small>+ <i>add discard</i> remove pop clear |= &amp;= -= ^=</small></div>
+  </div>
+</div>
+<p><code>MutableSet</code> inherits from <code>Set</code>, as <code>MutableMapping</code> does from <code>Mapping</code>: <code>Set</code> builds every operator from 3 methods, and <code>MutableSet</code> adds changes built from <code>add</code> and <code>discard</code>. <code>frozenset</code> is <b>registered</b> as a <code>Set</code>, <code>set</code> as a <code>MutableSet</code>, so in-place forms exist only on <code>set</code>.</p>
+</div>
+<pre>s = {1, 2, 3}
+s |= {4}          <span class="c"># {1, 2, 3, 4}</span>
+s &amp;= {2, 3, 4, 9} <span class="c"># {2, 3, 4}</span>
+s -= {4}          <span class="c"># {2, 3}</span>
+s ^= {3, 7}       <span class="c"># {2, 7}</span>
+{1, 2} &lt; {1, 2}   <span class="c"># False: proper subset</span>
+s.remove(99)      <span class="c"># KeyError</span>
+s.discard(99)     <span class="c"># no error</span>
+{*[1, 2], *'ab'}  <span class="c"># {1, 2, 'a', 'b'}</span></pre>
+</div>
+
+<table class="keep" style="margin-top:6px">
+<thead><tr><th style="width:16%"></th><th style="width:22%">New set</th><th style="width:36%">Method: any iterables</th><th>In place (<span style="text-transform:none"><code>set</code></span> only)</th></tr></thead>
+<tbody>
+<tr><td>union</td><td><code>a | b</code></td><td><code>a.union(*its)</code></td><td><code>a |= b</code> · <code>update</code></td></tr>
+<tr><td>intersection</td><td><code>a &amp; b</code></td><td><code>a.intersection(*its)</code></td><td><code>a &amp;= b</code></td></tr>
+<tr><td>difference</td><td><code>a - b</code></td><td><code>a.difference(*its)</code></td><td><code>a -= b</code></td></tr>
+<tr><td>symmetric</td><td><code>a ^ b</code></td><td><code>a.symmetric_difference(it)</code></td><td><code>a ^= b</code></td></tr>
+<tr><td>subset</td><td><code>a &lt;= b</code> · <code>a &lt; b</code></td><td><code>a.issubset(it)</code></td><td></td></tr>
+<tr><td>superset</td><td><code>a &gt;= b</code> · <code>a &gt; b</code></td><td><code>a.issuperset(it)</code></td><td></td></tr>
+<tr><td>no overlap</td><td></td><td><code>a.isdisjoint(it)</code></td><td></td></tr>
+</tbody>
+</table>
+
+<div class="two keep" style="margin-top:6px">
+<p><b>Dict views as sets:</b> <code>.keys()</code> and <code>.items()</code> are registered as <code>Set</code>, so they support <code>&amp; | - ^</code>, even with real sets, and return a <code>set</code>. <code>.items()</code> needs hashable values; <code>.values()</code> is not set-like.</p>
+<pre>d1 = dict(a=1, b=2, c=3)
+d2 = dict(b=20, c=30, e=50)
+d1.keys() &amp; d2.keys()  <span class="c"># {'b', 'c'}</span>
+d1.keys() - d2.keys()  <span class="c"># {'a'}</span>
+{'a', 'z'} - d1.keys() <span class="c"># {'z'}: missing</span></pre>
+</div>
 </section>
 
 </body>

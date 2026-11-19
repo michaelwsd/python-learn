@@ -34,6 +34,7 @@ def test_split_ends():
 # Exercise 3 ---------------------------------------------------------------
 def test_run_go():
     assert run(["go", "north"]) == "go north"
+    assert run(["go", "west"]) == "go west"
     assert run(["go"]) == "go where?"
 
 
@@ -62,6 +63,11 @@ def test_parse_trade():
         ("MSFT", "SELL", 25, 411.2),
         ("NVDA", "BUY", 7, 118.03),
     ]
+
+
+def test_parse_trade_full_width_columns():
+    # a 6-letter symbol fills characters 0-5 completely, with no space after it
+    assert parse_trade("GOOGLESELL  3     150.00") == ("GOOGLE", "SELL", 3, 150.0)
 
 
 def test_parse_trade_uses_slice_objects():

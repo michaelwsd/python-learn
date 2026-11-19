@@ -68,7 +68,8 @@ def run(command):
 # Exercise 4: named slices for fixed-width data
 # ---------------------------------------------------------------------------
 # Each line has fixed-width columns:
-#   symbol: characters 0-5, side: 6-11, quantity: 12-17, price: 18 to the end
+#   symbol: line[0:6], side: line[6:12], quantity: line[12:18], price: line[18:]
+#   (each column is 6 characters wide; a 6-letter symbol leaves no space after it)
 #   "AAPL  BUY   100   189.50" -> ("AAPL", "BUY", 100, 189.5)
 # Define module-level slice objects (SYMBOL = slice(...), ...) and use them,
 # then strip spaces and convert quantity to int and price to float.
