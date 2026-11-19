@@ -92,15 +92,15 @@
   .abc b { display: block; font-size: 9.4pt; }
   .abc i { font-family: Menlo, monospace; font-size: 8pt; }
   .abc small { display: block; color: var(--muted); font-size: 7.8pt; }
-  .ch2 h3, .ch3 h3 { margin: 8px 0 4px; }
-  .ch2 p, .ch3 p { margin: 3px 0; }
-  .ch2 .two, .ch3 .two { gap: 8px; }
-  .ch2 table, .ch3 table { margin: 4px 0; }
-  .ch3 > * { margin-top: 0; margin-bottom: 0; }
-  .ch3 > h3 { margin: 14px 0 6px; }
-  .ch3 > .meta { margin-bottom: 8px; }
-  .ch3 .two > * > :last-child, .ch3 > div > :last-child { margin-bottom: 0; }
-  .ch3 > .two > pre, .ch3 > .two > div > pre:last-child { margin-bottom: 0; }
+  .ch2 h3, .ch3 h3, .ch6 h3 { margin: 8px 0 4px; }
+  .ch2 p, .ch3 p, .ch6 p { margin: 3px 0; }
+  .ch2 .two, .ch3 .two, .ch6 .two { gap: 8px; }
+  .ch2 table, .ch3 table, .ch6 table { margin: 4px 0; }
+  .ch3 > *, .ch6 > * { margin-top: 0; margin-bottom: 0; }
+  .ch3 > h3, .ch6 > h3 { margin: 14px 0 6px; }
+  .ch3 > .meta, .ch6 > .meta { margin-bottom: 8px; }
+  .ch3 .two > * > :last-child, .ch3 > div > :last-child, .ch6 .two > * > :last-child, .ch6 > div > :last-child { margin-bottom: 0; }
+  .ch3 > .two > pre, .ch3 > .two > div > pre:last-child, .ch6 > .two > pre, .ch6 > .two > div > pre:last-child { margin-bottom: 0; }
   table.var td { vertical-align: middle; padding: 5px 8px; }
   th.c, td.c { text-align: center; width: 9%; }
   th.c code { text-transform: none; letter-spacing: 0; }
@@ -129,6 +129,7 @@
     <div class="ci"><span class="cn">1</span><div><b>The Python Data Model</b><span>What the data model is · why <code>len()</code> is fast · <code>__repr__</code> vs <code>__str__</code> · truthiness · the Collection API · common special methods</span></div></div>
     <div class="ci"><span class="cn">2</span><div><b>An Array of Sequences</b><span>Container vs Flat · Mutable vs Immutable · genexps and the walrus · tuples · <code>match</code>/<code>case</code> · slicing · list alternatives · threads, the GIL and asyncio</span></div></div>
     <div class="ci"><span class="cn">3</span><div><b>Dictionaries and Sets</b><span>Dict comprehensions · <code>**</code> and <code>|</code> · mapping patterns · Mapping ABCs · hashability · <code>UserDict</code> · <code>__missing__</code> and <code>defaultdict</code> · variations of dict · <code>MappingProxyType</code> · how dict works · set theory · set operations</span></div></div>
+    <div class="ci"><span class="cn">6</span><div><b>Object References, Mutability, and Recycling</b><span>Variables as labels · assignment runs right to left · <code>is</code> vs <code>==</code> · relative immutability of tuples · shallow vs deep copies · mutable defaults · defensive copying · del and garbage collection</span></div></div>
   </nav>
 </header>
 
@@ -823,6 +824,131 @@ d2 = dict(b=20, c=30, e=50)
 d1.keys() &amp; d2.keys()  <span class="c"># {'b', 'c'}</span>
 d1.keys() - d2.keys()  <span class="c"># {'a'}</span>
 {'a', 'z'} - d1.keys() <span class="c"># {'z'}: missing</span></pre>
+</div>
+</section>
+
+
+<!-- ======================= CHAPTER 6 ======================= -->
+<section class="ch ch6">
+<h2><span class="n">6</span>Object References, Mutability, and Recycling</h2>
+<p class="meta">Book pages 201-230 · code in <code>fluent-python/ch06/</code></p>
+
+<div class="lead">A <b>name is not the object</b>: a variable is a label that refers to an object.</div>
+
+<h3>Variables are labels, not boxes</h3>
+<div class="two keep">
+<div>
+<p><code>b = a</code> <b>copies nothing</b>: it sticks a second label on the object <code>a</code> already refers to. Two names for one object are <b>aliases</b>.</p>
+<p><b>Mutating</b> (<code>append</code>, <code>a[0] = ...</code>, list <code>+=</code>) changes the object, so every label sees it. <b><code>=</code> never changes an object</b>: it only moves a label. So aliasing surprises only involve mutable objects.</p>
+</div>
+<pre>a = [1, 2, 3]
+b = a           <span class="c"># two labels, ONE list</span>
+a.append(4)     <span class="c"># mutate</span>
+b               <span class="c"># [1, 2, 3, 4]</span>
+a = [9]         <span class="c"># rebind a only</span>
+b               <span class="c"># [1, 2, 3, 4]</span></pre>
+</div>
+
+<h3>Assignment happens right to left</h3>
+<div class="two keep">
+<p>The right side runs <b>first</b> and creates or finds the object; only then is the name on the left <b>bound</b> to it. If the right side fails, the name is never created.</p>
+<pre>y = Gizmo() * 10
+<span class="c"># a Gizmo IS created, then * raises TypeError</span>
+'y' in globals()   <span class="c"># False: y never bound</span></pre>
+</div>
+
+<h3><code>is</code> vs <code>==</code></h3>
+<div class="two keep">
+<div>
+<table class="nw">
+<thead><tr><th></th><th>Compares</th><th>How</th></tr></thead>
+<tbody>
+<tr><td><code>a is b</code></td><td><b>identity</b></td><td>compares IDs: fast</td></tr>
+<tr><td><code>a == b</code></td><td><b>value</b></td><td>calls <code>__eq__</code>: can be slow</td></tr>
+</tbody>
+</table>
+<p><code>id(obj)</code>: unique and fixed for the object's life; mostly for debugging.</p>
+<p><b>Use <code>is</code> only for singletons:</b> <code>None</code> and sentinels (<code>is not</code> to negate). <b>Everything else: <code>==</code></b>; <code>is</code> may happen to work on small ints, hiding the bug.</p>
+</div>
+<pre>lewis = charles
+lewis is charles     <span class="c"># True: alias</span>
+alex = dict(charles)
+alex == charles      <span class="c"># True: equal value</span>
+alex is charles      <span class="c"># False: other object</span>
+if x is None: ...
+END = object()       <span class="c"># sentinel</span>
+if node is END: ...
+int('1000') is int('1000')  <span class="c"># False</span>
+int('1000') == int('1000')  <span class="c"># True</span></pre>
+</div>
+
+<h3>Tuples hold fixed references</h3>
+<div class="two keep">
+<p>A tuple stores <b>references</b>. Immutable means those references never change, but a <b>mutable object it refers to can</b>. So the identity of its items is fixed, while its value may change. This is why a tuple holding a list is unhashable, and behind the Ch 2 <code>+=</code> puzzler.</p>
+<pre>t1 = (1, 2, [30, 40])
+t2 = (1, 2, [30, 40])
+t1 == t2             <span class="c"># True</span>
+t1[-1].append(99)    <span class="c"># same list, new value</span>
+t1                   <span class="c"># (1, 2, [30, 40, 99])</span>
+t1 == t2             <span class="c"># False</span></pre>
+</div>
+
+<h3>Shallow vs deep copies</h3>
+<div class="two keep">
+<div>
+<p><b>Shallow</b> (<code>list(a)</code>, <code>a[:]</code>, <code>a.copy()</code>, <code>copy.copy(a)</code>, the default): a new <b>outer</b> container holding the <b>same items</b>. Fine if the items are immutable; a shared mutable item changes in both.</p>
+<p><b>Deep</b> (<code>copy.deepcopy(a)</code>): copies everything inside, at any depth, so nothing is shared. Handles cycles; customize with <code>__deepcopy__</code>.</p>
+</div>
+<pre>a = [1, [2, 3]]
+s = list(a)           <span class="c"># shallow</span>
+d = copy.deepcopy(a)  <span class="c"># deep</span>
+a[1].append(4)        <span class="c"># change the inner list</span>
+s                     <span class="c"># [1, [2, 3, 4]] shared</span>
+d                     <span class="c"># [1, [2, 3]]    own</span></pre>
+</div>
+
+<h3 class="newpage">Mutable defaults and defensive copying</h3>
+<div class="two keep">
+<div>
+<p><b>Never use a mutable default.</b> A default value is made <b>only once</b>, not on every call. Every call that skips the argument gets <b>the same list</b>, so what one call adds is still there in the next.</p>
+<p><b>Fix:</b> default to <code>None</code>, and create a new object inside the function.</p>
+</div>
+<pre>def add(x, target=[]):      <span class="c"># BAD</span>
+    target.append(x)
+    return target
+add(1)              <span class="c"># [1]</span>
+add(2)              <span class="c"># [1, 2]  same list!</span>
+<span class="c"># GOOD: target=None, then</span>
+<span class="c">#   if target is None: target = []</span></pre>
+</div>
+<div class="two keep" style="margin-top:8px">
+<p><b>Defensive copying.</b> If you keep a mutable argument, <b>store your own copy</b>. Otherwise your object and the caller share one list, and changing yours changes theirs.</p>
+<pre>class Bus:
+    def __init__(self, passengers):
+        self.passengers = passengers  <span class="c"># BAD</span>
+team = ['Sue', 'Tina']
+Bus(team).passengers.remove('Tina')
+team                <span class="c"># ['Sue']  changed too!</span>
+<span class="c"># GOOD: self.passengers = list(passengers)</span></pre>
+</div>
+
+<h3><code>del</code> and garbage collection</h3>
+<div class="two keep">
+<div>
+<p><b><code>del x</code> deletes the name, not the object.</b> The object lives while any name still refers to it; rebinding the last name frees it too.</p>
+<p><b>Reference counting (CPython):</b> each object counts the references to it, and is freed the moment the count hits 0. Objects that refer to each other (a cycle) never reach 0, so a separate <b>cycle collector</b> (<code>gc</code>) frees them later.</p>
+<p><b>Avoid <code>__del__</code>:</b> it doesn't delete anything, it's only called just before destruction, and when isn't guaranteed. Clean up with <code>with</code> or <code>close()</code>.</p>
+</div>
+<pre>a = [1, 2]
+b = a
+del a        <span class="c"># removes the name a only</span>
+b            <span class="c"># [1, 2]: still alive</span>
+b = [3]      <span class="c"># last name gone → freed</span>
+
+x.other = y  <span class="c"># x → y</span>
+y.other = x  <span class="c"># y → x: a cycle</span>
+del x, y     <span class="c"># counts stay at 1...</span>
+gc.collect() <span class="c"># ...gc frees them</span></pre>
 </div>
 </section>
 
