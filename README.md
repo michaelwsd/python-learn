@@ -1,4 +1,4 @@
-# Python Prep (IMC)
+# Python Prep
 
 Preparation notes and practice projects on modern Python tooling, Kubernetes and core Python.
 

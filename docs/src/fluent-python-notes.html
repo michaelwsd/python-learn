@@ -29,6 +29,12 @@
   pre .c { color: var(--muted); }
   pre .ok { color: var(--ok); font-weight: 700; }
   pre .bad { color: var(--bad); font-weight: 700; }
+  .blk { display: inline-block; width: 14px; height: 8px; margin: 0 1px; vertical-align: 0; background: var(--ink); border-radius: 1px; }
+  h3 .extra { display: inline-block; vertical-align: 2px; margin-left: 6px; padding: 1px 7px; border-radius: 9px; background: var(--warn-soft); border: 1px solid #ecd3a2; color: var(--warn); font-size: 7.6pt; font-weight: 600; letter-spacing: .03em; }
+  .stack > pre { margin: 0; padding: 5px 10px; }
+  .stack > pre + pre { margin-top: 4px; }
+  .stack { margin: 6px 0; }
+  .two > .stack, .two > div > .stack:last-child { margin: 0; }
   p { margin: 4px 0; }
   b { font-weight: 650; }
   ol, ul { margin: 4px 0; padding-left: 20px; }
@@ -92,15 +98,15 @@
   .abc b { display: block; font-size: 9.4pt; }
   .abc i { font-family: Menlo, monospace; font-size: 8pt; }
   .abc small { display: block; color: var(--muted); font-size: 7.8pt; }
-  .ch2 h3, .ch3 h3, .ch6 h3 { margin: 8px 0 4px; }
-  .ch2 p, .ch3 p, .ch6 p { margin: 3px 0; }
-  .ch2 .two, .ch3 .two, .ch6 .two { gap: 8px; }
-  .ch2 table, .ch3 table, .ch6 table { margin: 4px 0; }
-  .ch3 > *, .ch6 > * { margin-top: 0; margin-bottom: 0; }
-  .ch3 > h3, .ch6 > h3 { margin: 14px 0 6px; }
-  .ch3 > .meta, .ch6 > .meta { margin-bottom: 8px; }
-  .ch3 .two > * > :last-child, .ch3 > div > :last-child, .ch6 .two > * > :last-child, .ch6 > div > :last-child { margin-bottom: 0; }
-  .ch3 > .two > pre, .ch3 > .two > div > pre:last-child, .ch6 > .two > pre, .ch6 > .two > div > pre:last-child { margin-bottom: 0; }
+  .ch2 h3, .ch3 h3, .ch6 h3, .ch7 h3 { margin: 8px 0 4px; }
+  .ch2 p, .ch3 p, .ch6 p, .ch7 p { margin: 3px 0; }
+  .ch2 .two, .ch3 .two, .ch6 .two, .ch7 .two { gap: 8px; }
+  .ch2 table, .ch3 table, .ch6 table, .ch7 table { margin: 4px 0; }
+  .ch3 > *, .ch6 > *, .ch7 > * { margin-top: 0; margin-bottom: 0; }
+  .ch3 > h3, .ch6 > h3, .ch7 > h3 { margin: 14px 0 6px; }
+  .ch3 > .meta, .ch6 > .meta, .ch7 > .meta { margin-bottom: 8px; }
+  .ch3 .two > * > :last-child, .ch3 > div > :last-child, .ch6 .two > * > :last-child, .ch6 > div > :last-child, .ch7 .two > * > :last-child, .ch7 > div > :last-child { margin-bottom: 0; }
+  .ch3 > .two > pre, .ch3 > .two > div > pre:last-child, .ch6 > .two > pre, .ch6 > .two > div > pre:last-child, .ch7 > .two > pre, .ch7 > .two > div > pre:last-child { margin-bottom: 0; }
   table.var td { vertical-align: middle; padding: 5px 8px; }
   th.c, td.c { text-align: center; width: 9%; }
   th.c code { text-transform: none; letter-spacing: 0; }
@@ -130,6 +136,7 @@
     <div class="ci"><span class="cn">2</span><div><b>An Array of Sequences</b><span>Container vs Flat · Mutable vs Immutable · genexps and the walrus · tuples · <code>match</code>/<code>case</code> · slicing · list alternatives · threads, the GIL and asyncio</span></div></div>
     <div class="ci"><span class="cn">3</span><div><b>Dictionaries and Sets</b><span>Dict comprehensions · <code>**</code> and <code>|</code> · mapping patterns · Mapping ABCs · hashability · <code>UserDict</code> · <code>__missing__</code> and <code>defaultdict</code> · variations of dict · <code>MappingProxyType</code> · how dict works · set theory · set operations</span></div></div>
     <div class="ci"><span class="cn">6</span><div><b>Object References, Mutability, and Recycling</b><span>Variables as labels · assignment runs right to left · <code>is</code> vs <code>==</code> · relative immutability of tuples · shallow vs deep copies · mutable defaults · defensive copying · del and garbage collection</span></div></div>
+    <div class="ci"><span class="cn">7</span><div><b>Functions as First-Class Objects</b><span>Functions as objects · higher-order functions · <code>map</code>, <code>filter</code>, <code>reduce</code> · lazy iterators · callables and <code>__call__</code> · parameter kinds</span></div></div>
   </nav>
 </header>
 
@@ -175,16 +182,14 @@ random.choice(deck)  <span class="c"># stdlib works too</span></pre>
   <li>Your own class takes the slow route. For <code>len(deck)</code>, Python has to find <code>__len__</code> on the class, set up a Python function call, and run your code, which here calls <code>len()</code> on the inner list. Same answer, several extra steps.</li>
 </ol>
 <div>
-<pre><span class="c"># a list in memory (simplified)</span>
+<div class="stack"><pre><span class="c"># a list in memory (simplified)</span>
 list object
 ├── ob_refcnt
 ├── ob_type   = list
 ├── ob_size  = 1000 <span class="c">← len() reads</span>
-└── ob_item  → [items...]
-
-<span class="c"># 5 million calls each (measured)</span>
+└── ob_item  → [items...]</pre><pre><span class="c"># 5 million calls each (measured)</span>
 len(list)    0.09s
-len(MyList)  0.22s</pre>
+len(MyList)  0.22s</pre></div>
 </div>
 </div>
 <p>This is why <code>len</code> is a <b>function</b>, not a method: one syntax for everything, with a fast path for built-ins.</p>
@@ -223,17 +228,15 @@ len(MyList)  0.22s</pre>
 </ol>
 <p>So a collection with only <code>__len__</code> is falsy when empty, like <code>[]</code> and <code>""</code>.</p>
 </div>
-<pre><span class="c"># Vector: falsy only for Vector(0, 0)</span>
+<div class="stack"><pre><span class="c"># Vector: falsy only for Vector(0, 0)</span>
 def __bool__(self):
-    return bool(abs(self))
-
-<span class="c"># faster: skips the square root</span>
+    return bool(abs(self))</pre><pre><span class="c"># faster: skips the square root</span>
 def __bool__(self):
     return bool(self.x or self.y)
 <span class="c"># `or` returns an operand (e.g. 3), not</span>
 <span class="c"># a bool: hence the bool(...) wrapper.</span>
 <span class="c"># bool(3) runs int's __bool__, not</span>
-<span class="c"># Vector's: no recursion.</span></pre>
+<span class="c"># Vector's: no recursion.</span></pre></div>
 </div>
 
 <h3>The Collection API</h3>
@@ -355,13 +358,11 @@ abstract method '__getitem__'</pre>
 <p><b>Flat sequences</b> store <b>raw values</b> directly, packed side by side in one block of memory: <code>str</code> holds characters, <code>bytes</code> holds integers 0-255, <code>array('d')</code> holds floats. One simple type only, but compact: 1M floats take 32 MB in a list vs 8 MB in an array.</p>
 </div>
 <div>
-<pre><span class="c"># container: [1.5, 2.5, 3.5]</span>
+<div class="stack"><pre><span class="c"># container: [1.5, 2.5, 3.5]</span>
 [ ● | ● | ● ]       <span class="c">← 3 pointers</span>
   ▼   ▼   ▼
- 1.5 2.5 3.5        <span class="c">← 3 full float objects</span>
-
-<span class="c"># flat: array('d', [1.5, 2.5, 3.5])</span>
-[ 1.5 | 2.5 | 3.5 ] <span class="c">← raw 8-byte values</span></pre>
+ 1.5 2.5 3.5        <span class="c">← 3 full float objects</span></pre><pre><span class="c"># flat: array('d', [1.5, 2.5, 3.5])</span>
+[ 1.5 | 2.5 | 3.5 ] <span class="c">← raw 8-byte values</span></pre></div>
 <table>
 <thead><tr><th></th><th>Container</th><th>Flat</th></tr></thead>
 <tbody>
@@ -392,22 +393,18 @@ list.__mro__   <span class="c"># (list, object)</span></pre>
 
 <h3>Comprehensions, generator expressions and the walrus</h3>
 <div class="two keep">
-<pre><span class="c"># listcomp: builds the whole list</span>
-[ord(s) for s in symbols if ord(s) > 127]
-[(c, s) for c in colors for s in sizes]
-
-<span class="c"># genexp: (...) yields items one by one,</span>
-<span class="c"># no list in memory</span>
-sum(len(w) for w in words)
-tuple(ord(s) for s in symbols)</pre>
-<div>
 <p><b>Generator expressions</b> are written in parentheses and save memory: items are produced one at a time, on demand. As a sole argument, they need no extra parentheses.</p>
-<p>The <b>walrus operator</b> <code>:=</code> assigns a value and returns it in the same expression. Use it to avoid computing something twice. Wrap it in parentheses.</p>
-<pre>while (chunk := f.read(4096)):
-    process(chunk)
-[p for l in lines
-   if (p := parse(l)) is not None]</pre>
+<div class="stack"><pre><span class="c"># listcomp: builds the whole list</span>
+[ord(s) for s in symbols if ord(s) > 127]
+[(c, s) for c in colors for s in sizes]</pre><pre><span class="c"># genexp: yields items one by one</span>
+sum(len(w) for w in words)
+tuple(ord(s) for s in symbols)</pre></div>
 </div>
+<div class="two keep" style="margin-top:6px">
+<p>The <b>walrus operator</b> <code>:=</code> assigns a value and returns it in the same expression. Use it to avoid computing something twice. Wrap it in parentheses.</p>
+<div class="stack"><pre>while (chunk := f.read(4096)):
+    process(chunk)</pre><pre>[p for l in lines
+   if (p := parse(l)) is not None]</pre></div>
 </div>
 
 <h3>Tuples</h3>
@@ -416,15 +413,13 @@ tuple(ord(s) for s in symbols)</pre>
 <p>Tuples are either <b>records</b>, where position gives meaning (unpack them into names), or <b>immutable lists</b>, where the length and contents can never be swapped out.</p>
 <p>A tuple stores <b>references</b>, like any container sequence, so it's only truly fixed if everything inside it is immutable too. A tuple holding a mutable object <b>can't be hashed</b>, so it can't be a dict key or a set item.</p>
 </div>
-<pre><span class="c"># record: unpack by position</span>
+<div class="stack"><pre><span class="c"># record: unpack by position</span>
 city, year, pop = ("Tokyo", 2003, 32_450)
-for country, _ in traveler_ids: ...
-
-<span class="c"># relative immutability</span>
+for country, _ in traveler_ids: ...</pre><pre><span class="c"># relative immutability</span>
 b = (10, "alpha", [1, 2])
 b[-1].append(99)   <span class="c"># OK: list inside changes</span>
 b[-1] = [5]        <span class="c"># TypeError</span>
-hash(b)            <span class="c"># TypeError</span></pre>
+hash(b)            <span class="c"># TypeError</span></pre></div>
 </div>
 
 <table class="keep">
@@ -473,15 +468,13 @@ hash(b)            <span class="c"># TypeError</span></pre>
 <p><b>2. Several dimensions.</b> Commas in <code>[]</code> pass a tuple of keys, one per dimension. Built-in sequences are 1D; NumPy uses it.</p>
 <p><b>3. Ellipsis</b> <code>...</code> fills in <code>:</code> for every dimension not mentioned.</p>
 </div>
-<pre>SKU   = slice(0, 6)
+<div class="stack"><pre>SKU   = slice(0, 6)
 PRICE = slice(40, 52)
 print(line[SKU], line[PRICE])
-<span class="c"># "abc"[1:3] == "abc"[slice(1, 3)]</span>
-
-a[1, 2]        <span class="c"># row 1, column 2</span>
+<span class="c"># "abc"[1:3] == "abc"[slice(1, 3)]</span></pre><pre>a[1, 2]        <span class="c"># row 1, column 2</span>
 a[:, 0]        <span class="c"># every row, column 0</span>
 a[0:2, 1:3]    <span class="c"># a 2x2 block</span>
-b[0, ...]      <span class="c"># 3D: same as b[0, :, :]</span></pre>
+b[0, ...]      <span class="c"># 3D: same as b[0, :, :]</span></pre></div>
 </div>
 
 <div class="two keep">
@@ -506,7 +499,7 @@ b[0, ...]      <span class="c"># 3D: same as b[0, :, :]</span></pre>
 
 <h3>When a list is not the answer</h3>
 <table class="keep">
-<thead><tr><th style="width:42%">You need</th><th style="width:22%">Use</th><th>Why</th></tr></thead>
+<thead><tr><th style="width:36%">You need</th><th style="width:19%">Use</th><th>Why</th></tr></thead>
 <tbody>
 <tr><td>A general mixed collection</td><td><code>list</code></td><td>the default</td></tr>
 <tr><td>Millions of plain numbers, compact</td><td><code>array.array</code></td><td>flat: about 4x less memory, fast <code>tofile</code>/<code>fromfile</code></td></tr>
@@ -518,30 +511,28 @@ b[0, ...]      <span class="c"># 3D: same as b[0, :, :]</span></pre>
 </tbody>
 </table>
 
-<h3>Threads, the GIL and asyncio</h3>
-<div class="two keep">
+<h3 style="margin-top:16px">Threads, the GIL and asyncio <span class="extra">Extra · not in the chapter</span></h3>
+<div class="two keep" style="grid-template-columns:minmax(0,1fr) auto;gap:20px">
 <div>
 <p><b>Concurrency</b>: several jobs are in progress at once, and the CPU switches between them.</p>
 <p><b>Parallelism</b>: several jobs run at the same instant, on different CPU cores.</p>
 <p>Python has real OS threads, but the <b>GIL</b> (Global Interpreter Lock) lets only <b>one thread run Python code at a time</b>. So for Python code, threads give <b>concurrency, not parallelism</b>.</p>
-<p><b>CPU-bound</b> (calculating): each thread needs the GIL the whole time, so they take turns: the staircase. The GIL is the bottleneck, not the CPU (other cores sit idle), so use <b>multiprocessing</b>: one GIL per process.</p>
-<p><b>I/O-bound</b> (waiting on network, disk, <code>q.get()</code>): a thread runs briefly (█), then <b>releases the GIL</b> while it waits (····), so the waits overlap: threads suit I/O-bound work.</p>
+<p><b>CPU-bound</b> (calculating): each thread needs the GIL (<span class="blk"></span>) the whole time, so they take turns: the staircase. The GIL is the bottleneck, not the CPU (other cores sit idle), so use <b>multiprocessing</b>: one GIL per process.</p>
+<p><b>I/O-bound</b> (waiting on network, disk, <code>q.get()</code>): a thread runs briefly (<span class="blk"></span>), then <b>releases the GIL</b> while it waits (····), so the waits overlap: threads suit I/O-bound work.</p>
 </div>
-<pre><span class="c"># █ = running Python (holds the GIL)</span>
+<div class="stack"><pre><span class="c"># █ = running Python (holds the GIL)</span>
 <span class="c"># CPU-bound: threads take turns</span>
 time ─────────────────────▶
 T1 ████
 T2     ████
 T3         ████
 T4             ████
-<span class="c"># 4 threads 0.25s ≈ 4 × 0.06s</span>
-
-<span class="c"># I/O-bound: waiting releases the GIL</span>
+<span class="c"># 4 threads 0.25s ≈ 4 × 0.06s</span></pre><pre><span class="c"># I/O-bound: waiting releases the GIL</span>
 T1 █···· waiting ····
 T2  █···· waiting ····
 T3   █···· waiting ····
 T4    █···· waiting ····
-<span class="c"># 4 threads 0.51s ≈ 1 × 0.51s</span></pre>
+<span class="c"># 4 threads 0.51s ≈ 1 × 0.51s</span></pre></div>
 </div>
 <table class="keep">
 <thead><tr><th style="width:18%"></th><th style="width:27%">threads</th><th style="width:27%">asyncio</th><th>multiprocessing</th></tr></thead>
@@ -570,23 +561,19 @@ T4    █···· waiting ····
 <p><b><code>**</code> unpacking:</b> in a <b>call</b>, keys must be unique strings; in a <b>literal</b>, duplicates are fine and <b>the later one wins</b>.</p>
 <p><b>Merging (3.9+):</b> <code>d1 | d2</code> returns a <b>new</b> dict; <code>d1 |= d2</code> updates <code>d1</code> <b>in place</b>. The right side wins clashes.</p>
 </div>
-<pre>{name: code for code, name in dial_codes}
+<div class="stack"><pre>{name: code for code, name in dial_codes}
 {code: name.upper()
  for name, code in sorted(d.items())
- if code &lt; 70}
-
-dump(**{'x': 1}, y=2, **{'z': 3})
+ if code &lt; 70}</pre><pre>dump(**{'x': 1}, y=2, **{'z': 3})
 <span class="c"># kwargs = {'x': 1, 'y': 2, 'z': 3}</span>
 {'a': 0, **{'x': 1}, **{'x': 4}}
-<span class="c"># {'a': 0, 'x': 4}   later x wins</span>
-
-config = defaults | user_settings <span class="c"># new dict</span>
-d1 |= d2                          <span class="c"># in place</span></pre>
+<span class="c"># {'a': 0, 'x': 4}   later x wins</span></pre><pre>config = defaults | user_settings <span class="c"># new dict</span>
+d1 |= d2                          <span class="c"># in place</span></pre></div>
 </div>
 
 <h3>Pattern matching with mappings</h3>
 <div class="two keep">
-<pre>match record:
+<div class="stack"><pre>match record:
     case {'type': 'book', 'api': 2,
           'authors': [*names]}:
         return names
@@ -598,10 +585,8 @@ d1 |= d2                          <span class="c"># in place</span></pre>
     case {'type': 'movie', 'director': name}:
         return [name]
     case _:                      <span class="c"># catch-all</span>
-        raise ValueError(...)
-
-case {'category': 'ice cream', **details}:
-    <span class="c"># details = all the OTHER keys</span></pre>
+        raise ValueError(...)</pre><pre>case {'category': 'ice cream', **details}:
+    <span class="c"># details = all the OTHER keys</span></pre></div>
 <div>
 <p>A mapping pattern means <i>"has these keys, with values matching these patterns"</i>. Values can be any pattern, including sequence patterns.</p>
 <p><b>Partial matches succeed:</b> <b>extra keys are ignored</b> and order doesn't matter (sequence patterns need an exact length). Ideal for JSON-like records.</p>
@@ -628,9 +613,8 @@ case {'category': 'ice cream', **details}:
 <tr><td><code>list</code> <code>dict</code> <code>set</code></td><td>no: mutable</td></tr>
 </tbody>
 </table>
-<pre>hash((1, 2, (30, 40)))   <span class="c"># works</span>
-hash((1, 2, [30, 40]))   <span class="c"># TypeError: 'list'</span>
-{1: 'a', 1.0: 'b'}       <span class="c"># {1: 'b'}: 1 == 1.0</span></pre>
+<div class="stack"><pre>hash((1, 2, (30, 40)))   <span class="c"># works</span>
+hash((1, 2, [30, 40]))   <span class="c"># TypeError: 'list'</span></pre><pre>{1: 'a', 1.0: 'b'}       <span class="c"># {1: 'b'}: 1 == 1.0</span></pre></div>
 </div>
 </div>
 
@@ -724,17 +708,16 @@ with shelve.open('db') as db:
 </ul>
 <p><b>Use when</b> others should read a dict but not change it: keep the real dict private and expose the proxy. It is a <code>Mapping</code> but not a <code>MutableMapping</code>.</p>
 </div>
-<pre>d = {1: 'A'}
+<div class="stack"><pre>d = {1: 'A'}
 d_proxy = MappingProxyType(d)
 d_proxy[1]        <span class="c"># 'A'</span>
 d_proxy[2] = 'x'  <span class="c"># TypeError</span>
 d[2] = 'B'        <span class="c"># change the original...</span>
-d_proxy           <span class="c"># ...{1: 'A', 2: 'B'}</span>
-class Board:
+d_proxy           <span class="c"># ...{1: 'A', 2: 'B'}</span></pre><pre>class Board:
     def __init__(self):
         self._pins = {13: 'LED'}  <span class="c"># private</span>
         self.pins = MappingProxyType(
-            self._pins)          <span class="c"># public</span></pre>
+            self._pins)          <span class="c"># public</span></pre></div>
 </div>
 
 <h3>Practical consequences of how <code>dict</code> works</h3>
@@ -761,21 +744,17 @@ p2    [5, 9]       <span class="c"># p2.__dict__ values: p2's own array</span></
 <p><b>Operators replace loops:</b> <code>|</code> union, <code>&amp;</code> intersection, <code>-</code> difference, <code>^</code> symmetric difference. Operators need sets on both sides; methods (<code>.intersection()</code>, ...) take any iterable.</p>
 <p><b>Literals are faster:</b> <code>{1, 2, 3}</code> compiles to one <code>BUILD_SET</code> instruction; <code>set([1, 2, 3])</code> looks up <code>set</code>, builds a list, then calls it (1M runs: 0.021s vs 0.054s).</p>
 </div>
-<pre>l = ['spam', 'eggs', 'spam']
+<div class="stack"><pre>l = ['spam', 'eggs', 'spam']
 set(l)                  <span class="c"># {'eggs', 'spam'}</span>
-list(dict.fromkeys(l))  <span class="c"># ['spam', 'eggs']</span>
-
-{{1, 2}}               <span class="c"># TypeError</span>
-{frozenset({1, 2}), 3} <span class="c"># OK</span>
-
-a = {1, 2, 3}
+list(dict.fromkeys(l))  <span class="c"># ['spam', 'eggs']</span></pre><pre>{{1, 2}}               <span class="c"># TypeError</span>
+{frozenset({1, 2}), 3} <span class="c"># OK</span></pre><pre>a = {1, 2, 3}
 b = {2, 3, 4}
 a | b  <span class="c"># {1, 2, 3, 4} union: in either</span>
 a &amp; b  <span class="c"># {2, 3}  intersection: in both</span>
 a - b  <span class="c"># {1}     difference: in a, not b</span>
 a ^ b  <span class="c"># {1, 4}  symmetric: in exactly one</span>
 a &amp; [3, 9]             <span class="c"># TypeError</span>
-a.intersection([3, 9])  <span class="c"># {3}: any iterable</span></pre>
+a.intersection([3, 9])  <span class="c"># {3}: any iterable</span></pre></div>
 </div>
 <div class="two keep" style="margin-top:8px">
 <p><b>Like dicts</b> (both are hash tables): elements must be hashable, <code>x in s</code> is fast at any size, and memory use is high.</p>
@@ -793,15 +772,12 @@ a.intersection([3, 9])  <span class="c"># {3}: any iterable</span></pre>
 </div>
 <p><code>MutableSet</code> inherits from <code>Set</code>, as <code>MutableMapping</code> does from <code>Mapping</code>: <code>Set</code> builds every operator from 3 methods, and <code>MutableSet</code> adds changes built from <code>add</code> and <code>discard</code>. <code>frozenset</code> is <b>registered</b> as a <code>Set</code>, <code>set</code> as a <code>MutableSet</code>, so in-place forms exist only on <code>set</code>.</p>
 </div>
-<pre>s = {1, 2, 3}
+<div class="stack"><pre>s = {1, 2, 3}
 s |= {4}          <span class="c"># {1, 2, 3, 4}</span>
 s &amp;= {2, 3, 4, 9} <span class="c"># {2, 3, 4}</span>
 s -= {4}          <span class="c"># {2, 3}</span>
-s ^= {3, 7}       <span class="c"># {2, 7}</span>
-{1, 2} &lt; {1, 2}   <span class="c"># False: proper subset</span>
-s.remove(99)      <span class="c"># KeyError</span>
-s.discard(99)     <span class="c"># no error</span>
-{*[1, 2], *'ab'}  <span class="c"># {1, 2, 'a', 'b'}</span></pre>
+s ^= {3, 7}       <span class="c"># {2, 7}</span></pre><pre>{1, 2} &lt; {1, 2}   <span class="c"># False: proper subset</span></pre><pre>s.remove(99)      <span class="c"># KeyError</span>
+s.discard(99)     <span class="c"># no error</span></pre><pre>{*[1, 2], *'ab'}  <span class="c"># {1, 2, 'a', 'b'}</span></pre></div>
 </div>
 
 <table class="keep" style="margin-top:6px">
@@ -870,16 +846,14 @@ b               <span class="c"># [1, 2, 3, 4]</span></pre>
 <p><code>id(obj)</code>: unique and fixed for the object's life; mostly for debugging.</p>
 <p><b>Use <code>is</code> only for singletons:</b> <code>None</code> and sentinels (<code>is not</code> to negate). <b>Everything else: <code>==</code></b>; <code>is</code> may happen to work on small ints, hiding the bug.</p>
 </div>
-<pre>lewis = charles
+<div class="stack"><pre>lewis = charles
 lewis is charles     <span class="c"># True: alias</span>
 alex = dict(charles)
 alex == charles      <span class="c"># True: equal value</span>
-alex is charles      <span class="c"># False: other object</span>
-if x is None: ...
+alex is charles      <span class="c"># False: other object</span></pre><pre>if x is None: ...
 END = object()       <span class="c"># sentinel</span>
-if node is END: ...
-int('1000') is int('1000')  <span class="c"># False</span>
-int('1000') == int('1000')  <span class="c"># True</span></pre>
+if node is END: ...</pre><pre>int('1000') is int('1000')  <span class="c"># False</span>
+int('1000') == int('1000')  <span class="c"># True</span></pre></div>
 </div>
 
 <h3>Tuples hold fixed references</h3>
@@ -939,16 +913,130 @@ team                <span class="c"># ['Sue']  changed too!</span>
 <p><b>Reference counting (CPython):</b> each object counts the references to it, and is freed the moment the count hits 0. Objects that refer to each other (a cycle) never reach 0, so a separate <b>cycle collector</b> (<code>gc</code>) frees them later.</p>
 <p><b>Avoid <code>__del__</code>:</b> it doesn't delete anything, it's only called just before destruction, and when isn't guaranteed. Clean up with <code>with</code> or <code>close()</code>.</p>
 </div>
-<pre>a = [1, 2]
+<div class="stack"><pre>a = [1, 2]
 b = a
 del a        <span class="c"># removes the name a only</span>
 b            <span class="c"># [1, 2]: still alive</span>
-b = [3]      <span class="c"># last name gone → freed</span>
-
-x.other = y  <span class="c"># x → y</span>
+b = [3]      <span class="c"># last name gone → freed</span></pre><pre>x.other = y  <span class="c"># x → y</span>
 y.other = x  <span class="c"># y → x: a cycle</span>
 del x, y     <span class="c"># counts stay at 1...</span>
-gc.collect() <span class="c"># ...gc frees them</span></pre>
+gc.collect() <span class="c"># ...gc frees them</span></pre></div>
+</div>
+</section>
+
+
+<!-- ======================= CHAPTER 7 ======================= -->
+<section class="ch ch7">
+<h2><span class="n">7</span>Functions as First-Class Objects</h2>
+<p class="meta">Book pages 231-252 · code in <code>fluent-python/ch07/</code></p>
+
+<h3>Functions are objects</h3>
+<div class="two keep">
+<div>
+<p>In Python, every function is a <b>first-class object</b>: it can be created at runtime, assigned to a variable or stored in a data structure, passed as an argument, and returned from a function.</p>
+<p>A function is an instance of <code>function</code>, with attributes like <code>__name__</code> and <code>__doc__</code>. <code>def</code> just binds a name to a new function object.</p>
+<p><code>f</code> is the function; <code>f()</code> calls it. Pass <code>f</code> without parentheses to let something else call it later.</p>
+</div>
+<pre><span class="c"># a function is an object</span>
+def factorial(n):
+    """returns n!"""
+    if n &lt; 2:
+        return 1
+    return n * factorial(n - 1)
+
+type(factorial)     <span class="c"># &lt;class 'function'&gt;</span>
+factorial.__doc__   <span class="c"># 'returns n!'</span></pre>
+</div>
+<div class="two keep" style="margin-top:8px;align-items:stretch">
+<pre><span class="c"># 1. assign it to another name</span>
+fact = factorial    <span class="c"># same object</span>
+fact(5)             <span class="c"># 120</span></pre>
+<pre><span class="c"># 2. store it in a data structure</span>
+ops = {'mul': lambda a, b: a * b}
+ops['mul'](3, 4)    <span class="c"># 12</span></pre>
+</div>
+<div class="two keep" style="margin-top:8px;align-items:stretch">
+<pre><span class="c"># 3. pass it as an argument</span>
+list(map(factorial, range(6)))
+<span class="c"># [1, 1, 2, 6, 24, 120]</span></pre>
+<pre><span class="c"># 4. return it from a function</span>
+def make_adder(n):
+    def add(x):
+        return x + n
+    return add
+make_adder(5)(10)   <span class="c"># 15</span></pre>
+</div>
+
+<h3>Higher-order functions</h3>
+<div class="two keep">
+<p>A <b>higher-order function</b> takes a function as an argument or returns one as output, like <code>sorted</code>, <code>max</code> and <code>min</code> with <code>key=</code>. Any one-argument function works as a key.</p>
+<pre>sorted(fruits, key=len)
+<span class="c"># ['fig', 'apple', 'cherry', ...]</span></pre>
+</div>
+<div class="two keep" style="margin-top:6px">
+<p><b>Lambda:</b> <code>lambda params: expr</code> makes a small unnamed function whose body is one expression (no statements). Use it as a short argument to a higher-order function; otherwise use <code>def</code>.</p>
+<pre>sorted(fruits, key=lambda w: w[::-1])
+<span class="c"># ['banana', 'apple', 'fig', ...]</span></pre>
+</div>
+<div class="two keep" style="margin-top:6px">
+<p><b>The classic trio.</b> <code>map(f, it)</code> applies <code>f</code> to every item; <code>filter(f, it)</code> keeps items where <code>f(item)</code> is truthy; <code>reduce(f, it)</code> (in <code>functools</code>) combines items two at a time into one value.</p>
+<div class="stack"><pre>list(map(str, [1, 2]))       <span class="c"># ['1', '2']</span>
+list(filter(None, [0, 1, 2])) <span class="c"># [1, 2]</span></pre><pre>reduce(add, [1, 2, 3, 4])     <span class="c"># 10</span>
+<span class="c"># add(1, 2)→3, add(3, 3)→6, add(6, 4)→10</span></pre></div>
+</div>
+<div class="two keep" style="margin-top:6px">
+<p><code>map</code> and <code>filter</code> return <b>lazy iterators</b>: items are computed <b>one at a time, only when asked for</b> (<code>next()</code>, <code>for</code>, <code>list()</code>), so they use almost no memory. They are <b>one-pass</b>: once used up, they're empty.</p>
+<pre>m = map(square, [1, 2, 3])  <span class="c"># no work yet</span>
+next(m)                     <span class="c"># computes 1 now</span>
+list(m)                     <span class="c"># [4, 9]: the rest</span>
+list(m)                     <span class="c"># []: used up</span></pre>
+</div>
+
+<h3>Callables</h3>
+<div class="keep">
+<div class="two">
+<p>A <b>callable</b> is anything you can call with <code>()</code>: functions, built-in functions and methods, methods, <b>classes</b> (calling one creates an instance), and instances whose class defines <code>__call__</code>. Check with <code>callable(obj)</code>.</p>
+<pre>callable(len)     <span class="c"># True: a function</span>
+callable(str)     <span class="c"># True: a class</span>
+callable('Ni!')   <span class="c"># False</span></pre>
+</div>
+<div class="two" style="margin-top:6px">
+<div><p><b>Make your own:</b> define <code>__call__</code>, and <code>obj(...)</code> runs <code>obj.__call__(...)</code>.</p>
+<p><b>Why not a function?</b> A function forgets its local variables when it returns; an object keeps <b>state in its attributes between calls</b>, and you can inspect it.</p></div>
+<pre>class Adder:
+    def __init__(self):
+        self.total = 0
+    def __call__(self, x):
+        self.total += x
+        return self.total
+
+add = Adder()
+add(5)      <span class="c"># 5</span>
+add(10)     <span class="c"># 15: remembered the 5</span>
+add.total   <span class="c"># 15</span></pre>
+</div>
+</div>
+
+<h3>Parameter kinds: <code>/</code> and <code>*</code></h3>
+<div class="keep">
+<pre>def f(pos_only, /, normal, *args, kw_only, **kwargs):
+      └──┬───┘     └─┬──┘  └─┬─┘  └──┬──┘  └──┬───┘
+    by position   either   extra  by name   extra
+       only         way  pos args  only    kw args
+                          (tuple)          (dict)</pre>
+<pre style="margin-top:5px">def order(item, /, qty=1, *extras, gift_wrap=False, **notes): ...
+
+order('pizza', 2, 'cheese', 'olives', gift_wrap=True, note='ring bell')
+<span class="c"># item='pizza'  qty=2  extras=('cheese', 'olives')  gift_wrap=True  notes={'note': 'ring bell'}</span>
+
+order(item='pizza')                <span class="c"># TypeError: item is positional-only (it lands in **notes)</span>
+order('pizza', 2, 'cheese', True)  <span class="c"># True goes into extras: gift_wrap needs its name</span></pre>
+</div>
+<div class="two keep" style="margin-top:6px">
+<p><b><code>*args</code> vs bare <code>*</code>:</b> both make every parameter after them keyword-only. <code>*args</code> <b>collects</b> extra positional arguments into a tuple; a bare <code>*</code> <b>rejects</b> them with a <code>TypeError</code>.</p>
+<div class="stack"><pre>def f(a, *args, b): ...
+f(1, 2, 3, b=4)   <span class="c"># args=(2, 3)</span></pre><pre>def g(a, *, b): ...
+g(1, 2, b=4)      <span class="c"># TypeError</span></pre></div>
 </div>
 </section>
 
