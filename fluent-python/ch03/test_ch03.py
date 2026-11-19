@@ -1,5 +1,4 @@
 import pytest
-
 from exercises_ch03 import (
     StrKeyDict,
     compare,

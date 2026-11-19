@@ -1,7 +1,6 @@
 import inspect
 
 import pytest
-
 from exercises_ch06 import (
     Playlist,
     append_to,

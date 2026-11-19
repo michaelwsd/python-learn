@@ -38,7 +38,8 @@ alex = {"name": "Charles L. Dodgson", "born": 1832}  # equal value, different ob
 print("lewis is charles:", lewis is charles, "| id equal:", id(lewis) == id(charles))
 print("alex == charles:", alex == charles, "| alex is charles:", alex is charles)
 END_OF_DATA = object()  # a sentinel: compare with `is`
-print("x is None:", x is None, "| END_OF_DATA is END_OF_DATA:", END_OF_DATA is END_OF_DATA)
+node = END_OF_DATA
+print("x is None:", x is None, "| node is END_OF_DATA:", node is END_OF_DATA)
 
 section("Relative immutability of tuples (Example 6-5)")
 t1 = (1, 2, [30, 40])
@@ -98,7 +99,7 @@ for x_, y_ in [(1, 2), ([1, 2], [3, 4]), ((10, 20), (30, 40))]:
 
 
 class HauntedBus:
-    def __init__(self, passengers=[]):  # BAD: one list, created once, shared
+    def __init__(self, passengers=[]):  # noqa: B006  BAD: one list, created once, shared
         self.passengers = passengers
 
     def pick(self, name):
