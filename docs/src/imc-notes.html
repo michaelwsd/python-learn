@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>IMC Preparation Notes</title>
+<style>
+  @page { size: A4; margin: 16mm 16mm 18mm 16mm;
+    @bottom-right { content: counter(page) " / " counter(pages); font: 8pt -apple-system, Helvetica, Arial, sans-serif; color: #5b6475; }
+    @bottom-left { content: "IMC Preparation Notes"; font: 8pt -apple-system, Helvetica, Arial, sans-serif; color: #5b6475; } }
+  @page :first { @bottom-left { content: none; } }
+  :root {
+    --ink: #1c2230;
+    --muted: #5b6475;
+    --line: #dde2ea;
+    --soft: #f5f7fa;
+    --py: #2f5fb3;  --py-soft: #eaf0fb;
+    --uv: #7a3fb0;  --uv-soft: #f3ecfa;
+    --k8: #0f7c74;  --k8-soft: #e6f4f2;
+    --cp: #b0407a;  --cp-soft: #faecf3;
+    --warn: #a86a00; --warn-soft: #fdf4e3;
+    --dk: #c0561c;  --dk-soft: #fcefe6;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0; color: var(--ink); background: #fff;
+    font: 10pt/1.5 -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  code, .mono { font-family: Menlo, "SF Mono", Consolas, monospace; font-size: 8.6pt; }
+  code { background: var(--soft); border: 1px solid var(--line); border-radius: 3px; padding: 0 3px; white-space: nowrap; }
+  pre { margin: 6px 0; padding: 8px 10px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px;
+        font-family: Menlo, "SF Mono", Consolas, monospace; font-size: 8.4pt; line-height: 1.45; white-space: pre-wrap; break-inside: avoid; }
+  pre code { background: none; border: 0; padding: 0; }
+  p { margin: 4px 0; }
+  b, strong { font-weight: 650; }
+
+  /* Cover */
+  .cover { padding: 40px 0 0; }
+  .cover .head { padding-bottom: 16px; border-bottom: 2px solid var(--ink); }
+  .cover .kicker { text-transform: uppercase; letter-spacing: .12em; font-size: 8pt; color: var(--muted); font-weight: 600; }
+  .cover h1 { font-size: 28pt; line-height: 1.15; margin: 4px 0 4px; letter-spacing: -.01em; }
+  .cover .sub { color: var(--muted); font-size: 10.5pt; }
+  .contents { display: grid; gap: 8px; margin-top: 22px; }
+  .contents::before { content: "Contents"; font-size: 8pt; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+  .ci { display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  a.ci { color: inherit; text-decoration: none; }
+  .ci b { display: block; font-size: 11pt; margin-bottom: 2px; }
+  .ci span:not(.cn) { color: var(--muted); font-size: 9pt; }
+  .cn { width: 28px; height: 28px; border-radius: 6px; color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 11pt; }
+  .ci.py .cn { background: var(--py); } .ci.uv .cn { background: var(--uv); } .ci.dk .cn { background: var(--dk); } .ci.k8 .cn { background: var(--k8); }
+
+  /* Sections */
+  h2 { font-size: 15pt; margin: 18px 0 8px; padding: 5px 10px; border-radius: 6px; color: #fff; break-after: avoid; }
+  h2 .n { opacity: .75; font-weight: 500; margin-right: 6px; }
+  .s-py h2 { background: var(--py); } .s-uv h2 { background: var(--uv); } .s-k8 h2 { background: var(--k8); }
+  h3 { font-size: 11.5pt; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); break-after: avoid; }
+  .s-py h3 { color: var(--py); } .s-uv h3 { color: var(--uv); } .s-k8 h3 { color: var(--k8); }
+  h4 { font-size: 10pt; margin: 10px 0 4px; break-after: avoid; }
+  .page-break { break-before: page; }
+  section { break-before: page; }
+  section > h2:first-child { margin-top: 0; }
+
+  /* Concept cards */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card { border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; break-inside: avoid; }
+  .card h4 { margin: 0 0 3px; font-size: 10pt; }
+  .card.wide { grid-column: 1 / -1; }
+  .card.flowcard { break-inside: auto; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .flowcard p, .flowcard .two, .flowcard .flow { break-inside: avoid; }
+  .flowcard .two { grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: start; }
+  .flowcard .two pre { margin: 0; }
+  .flow.grid2 { grid-template-columns: 1fr 1fr; column-gap: 14px; row-gap: 6px; }
+  .s-py .card { border-top: 3px solid var(--py); }
+  .s-uv .card { border-top: 3px solid var(--uv); }
+
+  /* Callouts */
+  .note { border-left: 4px solid var(--k8); background: var(--k8-soft); padding: 7px 10px; border-radius: 0 6px 6px 0; margin: 8px 0; break-inside: avoid; }
+  .note.py { border-color: var(--py); background: var(--py-soft); }
+  .note.uv { border-color: var(--uv); background: var(--uv-soft); }
+  .note.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .note .t { font-weight: 650; display: block; margin-bottom: 1px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 4px; font-size: 9.2pt; }
+  th, td { text-align: left; vertical-align: top; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  th { background: var(--soft); font-size: 8.4pt; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+  tr { break-inside: avoid; }
+  td:first-child { width: 42%; }
+  td code { white-space: normal; word-break: break-word; }
+  table.feat td:first-child { width: 28%; font-weight: 600; }
+  table.feat2 td:first-child { width: 22%; font-weight: 600; }
+  .cmdblock { break-inside: avoid; margin-bottom: 4px; }
+  thead { display: table-header-group; }
+
+  /* Physical stack ladder */
+  .stack { display: grid; gap: 6px; margin: 6px 0; }
+  .layer { display: grid; grid-template-columns: 92px 1fr; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; break-inside: avoid; }
+  .layer .tag { background: var(--k8); color: #fff; padding: 8px; font-weight: 650; font-size: 9.2pt; line-height: 1.25; }
+  .layer .tag small { display: block; font-weight: 500; opacity: .8; font-size: 7.8pt; text-transform: uppercase; letter-spacing: .06em; }
+  .layer .body { padding: 7px 10px; }
+  .layer .prob { color: var(--muted); font-size: 9pt; margin-top: 3px; }
+  .layer .prob b { color: var(--warn); }
+  .layer ul { margin: 3px 0 0; padding-left: 16px; }
+  .layer:nth-child(1) .tag { background: #3d9a90; } .layer:nth-child(2) .tag { background: #2f8c82; }
+  .layer:nth-child(3) .tag { background: #1f7d74; } .layer:nth-child(4) .tag { background: #136c64; }
+  .layer:nth-child(5) .tag { background: #0b5a53; }
+
+  /* Nesting diagram */
+  .nest { font-size: 8.4pt; font-weight: 600; margin: 8px 0 4px; break-inside: avoid; }
+  .nest div { border: 1.5px solid var(--k8); border-radius: 6px; padding: 5px 8px 8px; background: rgba(15,124,116,.05); }
+  .nest div div { margin-top: 4px; }
+  .stackgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 6px 0; }
+  .stackgrid > .nest { margin: 0; align-self: start; }
+
+  /* Control plane diagram */
+  .cpsvg { margin: 4px 0 6px; break-inside: avoid; }
+  table.roles td:first-child { width: 26%; }
+  .cpsvg svg { display: block; }
+  .cpsvg figcaption { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 9pt; color: var(--muted); margin-top: 4px; }
+  .cpd { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 0; align-items: center; margin: 8px 0; break-inside: avoid; }
+  .box { border: 1.5px solid var(--cp); background: var(--cp-soft); border-radius: 7px; padding: 6px 8px; text-align: center; font-size: 8.8pt; }
+  .box b { display: block; font-size: 9.4pt; }
+  .box.k8 { border-color: var(--k8); background: var(--k8-soft); }
+  .box.user { border-color: var(--muted); background: var(--soft); }
+  .arrow { text-align: center; color: var(--muted); font-size: 8pt; }
+  .cpcol { display: grid; gap: 6px; }
+  .hub { display: grid; grid-template-columns: 26px 1fr 26px; align-items: center; }
+  .hub .arr { text-align: center; color: var(--cp); font-weight: 700; }
+
+  /* Flow */
+  .flow { display: grid; gap: 4px; margin: 6px 0; } .step { break-inside: avoid; }
+  .step { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; }
+  .step .num.py { background: var(--py); }
+  .step .num { width: 20px; height: 20px; border-radius: 50%; background: var(--k8); color: #fff; font-size: 8.4pt; font-weight: 700; display: grid; place-items: center; margin-top: 1px; }
+
+  .feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 6px 0; }
+  .feats div { border: 1px solid var(--line); border-top: 3px solid var(--k8); border-radius: 6px; padding: 6px 9px; font-size: 9pt; break-inside: avoid; }
+  .feats b { display: block; font-size: 9.4pt; margin-bottom: 1px; }
+  .podset { break-inside: avoid; }
+  .stackrow { display: grid; grid-template-columns: 1fr 150px; gap: 8px; align-items: start; margin: 6px 0; break-inside: avoid; }
+  .stackrow .stack { margin: 0; gap: 5px; }
+  .stackrow .layer { grid-template-columns: 96px 1fr; }
+  .stackrow .layer .body { padding: 5px 10px; }
+  .stackrow .layer ul { margin: 2px 0 0; }
+  .stackrow .nest { margin: 0; }
+    h3.newpage { break-before: page; margin-top: 0; }
+  .keep { break-inside: avoid; }
+  ul.tight { margin: 2px 0 4px; padding-left: 16px; } ul.tight li { margin: 1px 0; }
+  .card.k8c { border-top: 3px solid var(--k8); }
+  .card.k8c p { margin: 4px 0; }
+  table.mini { font-size: 8.8pt; margin: 4px 0; }
+  table.mini td { padding: 3px 6px; }
+  table.mini td:first-child { width: 36%; white-space: nowrap; }
+  table.keep { break-inside: avoid; }
+  table.objs { font-size: 8.7pt; }
+  table.objs td { padding: 4px 6px; }
+  table.objs td:first-child { width: 15%; font-weight: 600; }
+  table.objs td:nth-child(2) { width: 27%; }
+  table.objs td:nth-child(3) { width: 13%; }
+  table.objs td:nth-child(4) { width: 20%; }
+  table.objs .ver { display: block; font-weight: 400; color: var(--muted); font-size: 7.8pt; }
+  table.objs tr.noctl td { background: var(--soft); }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .muted { color: var(--muted); }
+
+  /* Docker section */
+  .s-dk h2 { background: var(--dk); } .s-dk h3 { color: var(--dk); }
+  .s-dk .card { border-top: 3px solid var(--dk); }
+  .note.dk { border-color: var(--dk); background: var(--dk-soft); }
+  table.df { font-size: 8.9pt; }
+  table.df tbody.stg { break-inside: avoid; }
+  table.df td { padding: 4px 8px; }
+  table.df td:first-child { width: 47%; }
+  table.df td.ln { width: 18px; color: var(--muted); font-family: Menlo, monospace; font-size: 8pt; padding-right: 0; }
+  table.df td.cd { font-family: Menlo, "SF Mono", Consolas, monospace; font-size: 8.3pt; white-space: pre; color: var(--ink); }
+  table.df tr.stage td { background: var(--dk-soft); color: var(--dk); font-weight: 650; font-size: 8pt; text-transform: uppercase; letter-spacing: .06em; padding: 3px 8px; }
+  .kw { color: var(--dk); font-weight: 700; }
+  .cache { font-family: Menlo, monospace; font-size: 8.3pt; }
+  .cache .hit { color: #1a7f4b; font-weight: 600; } .cache .miss { color: #b3261e; font-weight: 600; }
+
+  /* Checkpoint Q&A */
+  .qa { display: grid; gap: 7px; margin-top: 6px; }
+  .q { display: grid; grid-template-columns: 22px 1fr; gap: 8px; break-inside: avoid; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+  .q:last-child { border-bottom: 0; }
+  .q p { margin: 2px 0 0; color: var(--ink); }
+  .qn { width: 20px; height: 20px; border-radius: 50%; background: var(--k8); color: #fff; font-size: 8.4pt; font-weight: 700; display: grid; place-items: center; margin-top: 1px; }
+
+  /* uv section */
+  .files { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 6px 0; }
+  .files div { border: 1px solid var(--line); border-top: 3px solid var(--uv); border-radius: 6px; padding: 6px 9px; font-size: 9pt; }
+  .files b { display: block; font-size: 9.4pt; margin: 3px 0 1px; }
+  table.grp td { padding: 4px 8px; }
+  table.grp td:first-child { width: 40%; }
+  table.grp tbody.stg { break-inside: avoid; }
+  table.grp tr.stage td { background: var(--uv-soft); color: var(--uv); font-weight: 650; font-size: 8pt; text-transform: uppercase; letter-spacing: .06em; padding: 3px 8px; }
+  .cards.three { grid-template-columns: 1fr 1fr 1fr; margin-top: 8px; }
+  table.grp.dk td:first-child { width: 47%; }
+  table.grp.dk td:last-child code { white-space: nowrap; }
+  table.grp.dk tr.stage td { background: var(--dk-soft); color: var(--dk); }
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="head">
+  <div class="kicker">IMC Trading · Strategy Reliability Engineering</div>
+  <h1>IMC Preparation Notes</h1>
+  <div class="sub">Python fundamentals, the uv package manager, writing Dockerfiles, and Kubernetes from first principles to hands-on commands</div>
+  </div>
+  <nav class="contents">
+    <a class="ci py" href="#s1"><span class="cn">1</span><div><b>Python General Knowledge</b><span>Packages and <code>__init__.py</code> · <code>__all__</code> · <code>[project.scripts]</code> · generators · async/await · decorators</span></div></a>
+    <a class="ci uv" href="#s2"><span class="cn">2</span><div><b>uv Package Manager</b><span>pyproject vs uv.lock vs .venv · daily workflow · 2.1 Commands by task · 2.2 Key distinctions</span></div></a>
+    <a class="ci dk" href="#s3"><span class="cn">3</span><div><b>Docker: Writing a Dockerfile</b><span>3.1 Annotated example · 3.2 Layer caching, exec form, ENTRYPOINT vs CMD, .dockerignore · 3.3 Build the image and run it</span></div></a>
+    <a class="ci k8" href="#s4"><span class="cn">4</span><div><b>Kubernetes: Concepts</b><span>4.1 What it's for · 4.2 The physical stack, clusters and namespaces · 4.3 The control plane and self-healing · 4.4 Kubernetes objects</span></div></a>
+    <a class="ci k8" href="#s5"><span class="cn">5</span><div><b>Kubernetes: Commands by Task</b><span>5.1 Set up a cluster · 5.2 Deploy · 5.3 Explore and debug · 5.4 Services · 5.5 Labels · 5.6 Scaling · 5.7 Rolling updates · 5.8 Declarative YAML</span></div></a>
+    <a class="ci k8" href="#s6"><span class="cn">6</span><div><b>Kubernetes: Jobs (Batch Work)</b><span>6.1 Jobs: run to completion · 6.2 Debugging a failed Job</span></div></a>
+    <a class="ci k8" href="#s7"><span class="cn">7</span><div><b>Kubernetes Checkpoint</b><span>10 questions with answers</span></div></a>
+  </nav>
+</header>
+
+<!-- ================= PYTHON ================= -->
+<section id="s1" class="s-py">
+<h2><span class="n">1</span>Python General Knowledge</h2>
+
+<div class="cards">
+  <div class="card">
+    <h4><code>__init__.py</code></h4>
+    <p>The code that runs when a <b>package</b> is imported. <code>import httpx</code> runs <code>httpx/__init__.py</code>.</p>
+  </div>
+  <div class="card">
+    <h4><code>__all__</code></h4>
+    <p>A list of name strings defining the module's <b>public API</b>: what <code>from module import *</code> brings in.</p>
+  </div>
+  <div class="card wide">
+    <h4><code>[project.scripts]</code> in pyproject.toml</h4>
+    <p>Defines terminal commands. The format is <code>command = "package:function"</code>.</p>
+<pre>[project.scripts]
+pinger = "pinger:main"     # "pinger" in the terminal runs main() from package pinger</pre>
+  </div>
+  <div class="card">
+    <h4>Generators (<code>yield</code>)</h4>
+    <p>A function containing <code>yield</code> is a generator. It can <b>pause</b> partway through, hand a value out, and later <b>continue from that exact point</b>.</p>
+  </div>
+  <div class="card">
+    <h4>async / await</h4>
+    <p>Concurrency on <b>one thread</b>. The <b>event loop</b> keeps a list of tasks and runs whichever is ready (not waiting). It can't interrupt a task: the task gives back control voluntarily at each <code>await</code>. Best for I/O waits like network calls.</p>
+  </div>
+  <div class="card wide flowcard">
+    <h4>Decorators</h4>
+    <p>A decorator takes a function and returns a <b>new function (the wrapper)</b> that runs extra code <b>around a call to the original</b>. It works because functions are values: <code>greet</code> is the function itself, <code>greet()</code> calls it. Used for timing, logging, retries and permission checks.</p>
+<pre>def hello(func):                 # func = the ORIGINAL greet
+    def wrapper(*args, **kwargs):
+        print("before")
+        result = func(*args, **kwargs)  # call original
+        print("after")
+        return result            # pass its return value back
+    return wrapper               # returned, NOT called
+
+@hello                           # same as: greet = hello(greet)
+def greet(): print("hi")
+greet()                          # before / hi / after</pre>
+        <div class="flow grid2">
+          <div class="step"><div class="num py">1</div><div><code>@hello</code> runs <code>greet = hello(greet)</code>: the original is passed in as <code>func</code>.</div></div>
+          <div class="step"><div class="num py">2</div><div><code>hello</code> defines <code>wrapper</code> and returns it, so the name <code>greet</code> now points at the <b>wrapper</b>.</div></div>
+          <div class="step"><div class="num py">3</div><div>The wrapper still remembers <code>func</code> after <code>hello</code> has finished. This is a <b>closure</b>.</div></div>
+          <div class="step"><div class="num py">4</div><div><code>greet()</code> runs the wrapper: prints <i>before</i>, calls the original (<i>hi</i>), prints <i>after</i>.</div></div>
+        </div>
+    <div class="two">
+      <p><b>Why <code>*args, **kwargs</code>?</b> The wrapper <b>replaces</b> the original, so it must accept any arguments and pass them on unchanged: <code>*args</code> packs positional ones into a tuple, <code>**kwargs</code> keyword ones into a dict, and <code>func(*args, **kwargs)</code> unpacks them. Without them, <code>greet("Alice")</code> raises a <code>TypeError</code>.</p>
+<pre>@hello
+def greet(name, loud=False):
+    print(name.upper() if loud else name)
+greet("Alice", loud=True)
+# args=("Alice",)  kwargs={"loud": True}
+# before / ALICE / after</pre>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ================= UV ================= -->
+<section id="s2" class="s-uv">
+<h2><span class="n">2</span>uv Package Manager</h2>
+
+<p>uv is one fast tool that replaces <code>pip</code>, <code>venv</code>, <code>pip-tools</code>, <code>pyenv</code> and <code>pipx</code>. You edit dependencies with uv commands; uv keeps three things in step:</p>
+<div class="files">
+  <div><code>pyproject.toml</code><b>What you want</b>Dependencies and their allowed ranges (<code>httpx&gt;=0.28</code>). Commit it.</div>
+  <div><code>uv.lock</code><b>Exactly what you get</b>Every package pinned to one version, for every platform. Commit it; never edit by hand.</div>
+  <div><code>.venv/</code><b>What's installed</b>The project's environment, rebuilt from the lockfile. Never commit it.</div>
+</div>
+
+<div class="note uv">
+  <span class="t">Daily workflow</span>
+  <code>git pull</code> → <code>uv sync</code> → <code>uv add PKG</code> (when you need one) → <code>uv run pytest</code> → commit <b>both</b> <code>pyproject.toml</code> and <code>uv.lock</code>.
+</div>
+
+<h3>2.1 Commands by task</h3>
+<table class="grp">
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody class="stg">
+  <tr class="stage"><td colspan="2">Start a project</td></tr>
+  <tr><td><code>uv init NAME</code></td><td>New app project: <code>pyproject.toml</code>, <code>.python-version</code>, <code>main.py</code>. Add <code>--package</code> for an installable <code>src/</code> layout with a command entry point (how pinger was made), <code>--lib</code> for a library.</td></tr>
+  <tr><td><code>uv python install 3.13</code><br><code>uv python pin 3.13</code></td><td>Download a Python version (no system install needed); write <code>.python-version</code> so the project uses it.</td></tr>
+</tbody>
+<tbody class="stg">
+  <tr class="stage"><td colspan="2">Dependencies</td></tr>
+  <tr><td><code>uv add httpx</code><br><code>uv add "httpx>=0.28"</code></td><td>Add to <code>[project] dependencies</code>, update <code>uv.lock</code> and install, all in one step.</td></tr>
+  <tr><td><code>uv add --dev pytest ruff</code></td><td>Dev-only tools (the <code>dev</code> group). Skipped by <code>--no-dev</code>, e.g. in Docker.</td></tr>
+  <tr><td><code>uv add --group lint ruff</code></td><td>A named group; install it with <code>uv sync --group lint</code>.</td></tr>
+  <tr><td><code>uv remove httpx</code></td><td>Remove a dependency (pyproject, lock and <code>.venv</code>).</td></tr>
+  <tr><td><code>uv tree</code><br><code>uv tree --outdated</code></td><td>Show the dependency tree: who pulls in what. <code>--outdated</code> shows packages with newer versions.</td></tr>
+</tbody>
+<tbody class="stg">
+  <tr class="stage"><td colspan="2">Lock and sync</td></tr>
+  <tr><td><code>uv sync</code></td><td>Make <code>.venv</code> match the lockfile <b>exactly</b>: installs what's missing, removes extras. Run after <code>git pull</code> or switching branch.</td></tr>
+  <tr><td><code>uv sync --locked</code></td><td>Same, but <b>errors</b> if <code>uv.lock</code> doesn't match <code>pyproject.toml</code>. Use in CI and Docker.</td></tr>
+  <tr><td><code>uv sync --frozen</code></td><td>Use <code>uv.lock</code> as-is without checking it against <code>pyproject.toml</code>.</td></tr>
+  <tr><td><code>uv sync --no-dev</code></td><td>Skip dev tools: production installs.</td></tr>
+  <tr><td><code>uv lock --upgrade-package httpx</code><br><code>uv lock --upgrade</code></td><td>Bump one package (or everything) to the newest versions your constraints allow. Then <code>uv sync</code>.</td></tr>
+  <tr><td><code>uv lock --check</code></td><td>Is the lockfile up to date? Exit 1 if not. A common CI step.</td></tr>
+</tbody>
+<tbody class="stg">
+  <tr class="stage"><td colspan="2">Run code and tools</td></tr>
+  <tr><td><code>uv run pytest</code><br><code>uv run pinger https://example.com</code></td><td>Run inside the project env. Locks and syncs first, so no need to activate <code>.venv</code>.</td></tr>
+  <tr><td><code>uv run --with rich python x.py</code></td><td>Add a package for this one run only.</td></tr>
+  <tr><td><code>uvx ruff check .</code></td><td>Run a tool in a throwaway env without installing it (short for <code>uv tool run</code>).</td></tr>
+  <tr><td><code>uv tool install ruff</code><br><code>uv tool upgrade --all</code></td><td>Install a CLI globally in its own isolated env; upgrade all of them.</td></tr>
+</tbody>
+<tbody class="stg">
+  <tr class="stage"><td colspan="2">One-off scripts</td></tr>
+  <tr><td><code>uv init --script check.py</code><br><code>uv add --script check.py httpx</code></td><td>Standalone script whose dependencies are stored <b>inside the file</b> (an inline metadata comment block).</td></tr>
+  <tr><td><code>uv run check.py</code></td><td>uv builds a temporary env with those dependencies and runs it.</td></tr>
+</tbody>
+<tbody class="stg">
+  <tr class="stage"><td colspan="2">Build and release</td></tr>
+  <tr><td><code>uv version</code><br><code>uv version --bump minor</code></td><td>Show or bump the version in <code>pyproject.toml</code> (<code>major</code> / <code>minor</code> / <code>patch</code>).</td></tr>
+  <tr><td><code>uv build</code></td><td>Write a wheel (<code>.whl</code>, ready to install) and an sdist (<code>.tar.gz</code>, source) to <code>dist/</code>.</td></tr>
+  <tr><td><code>uv publish</code></td><td>Upload <code>dist/</code> to PyPI or a private package index.</td></tr>
+  <tr><td><code>uv export --format requirements.txt</code></td><td>Generate <code>requirements.txt</code> from the lockfile, for tools that still need one.</td></tr>
+</tbody>
+<tbody class="stg">
+  <tr class="stage"><td colspan="2">Housekeeping</td></tr>
+  <tr><td><code>uv pip install X</code><br><code>uv pip list</code></td><td>pip-compatible interface for old workflows. Does <b>not</b> touch <code>pyproject.toml</code> or <code>uv.lock</code>; prefer <code>uv add</code>.</td></tr>
+  <tr><td><code>uv cache clean</code> · <code>uv self update</code></td><td>Free disk space; update uv itself.</td></tr>
+</tbody>
+</table>
+
+<h3>2.2 Key distinctions</h3>
+<div class="cards">
+  <div class="card">
+    <h4><code>uv add --dev</code> vs <code>uv tool install</code></h4>
+    <p><code>uv add --dev pytest</code>: part of <b>this project</b>, pinned in its lockfile, so every teammate and CI gets the same version.</p>
+    <p><code>uv tool install ruff</code>: a command on <b>your machine</b>, for every project, in its own isolated env.</p>
+  </div>
+  <div class="card">
+    <h4><code>uv sync</code> vs <code>--locked</code> vs <code>--frozen</code></h4>
+    <p><code>uv sync</code>: <code>pyproject.toml</code> wins; updates the lock if needed. For local work.</p>
+    <p><code>--locked</code>: lock must already match, else error. For CI and Docker.</p>
+    <p><code>--frozen</code>: trust the lock, don't check it at all.</p>
+  </div>
+</div>
+</section>
+
+<!-- ================= DOCKER ================= -->
+<section id="s3" class="s-dk">
+<h2><span class="n">3</span>Docker: Writing a Dockerfile</h2>
+
+<p>A Dockerfile is a <b>recipe that builds an image</b>, one instruction at a time. Each instruction runs at <b>build time</b> and saves its result as a cached <b>layer</b>; the stacked layers are the image. Only <code>ENTRYPOINT</code> / <code>CMD</code> describe <b>run time</b>: what a container does when it starts. Example: the <code>pinger</code> CLI from Module 1.</p>
+
+<h3>3.1 Annotated example: <code>uv/pinger/Dockerfile</code></h3>
+<table class="df">
+<tbody class="stg">  <tr class="stage"><td colspan="3">Base and tools</td></tr>
+  <tr><td class="ln">1</td><td class="cd"><span class="kw">FROM</span> python:3.14-slim</td><td>Start from the official image: minimal Debian + Python 3.14 (~120 MB vs ~1 GB full). Must satisfy <code>requires-python</code>.</td></tr>
+  <tr><td class="ln">2</td><td class="cd"><span class="kw">COPY</span> --from=ghcr.io/astral-sh/uv:0.13.7 \
+     /uv /bin/uv</td><td>Copy just the <code>uv</code> binary out of uv's official image into ours. <code>--from</code> copies from another image; the pinned version keeps builds reproducible.</td></tr>
+</tbody>
+<tbody class="stg">  <tr class="stage"><td colspan="3">Setup</td></tr>
+  <tr><td class="ln">3</td><td class="cd"><span class="kw">WORKDIR</span> /app</td><td><code>mkdir -p /app &amp;&amp; cd /app</code> <b>inside the image</b>, for all later steps. Containers also start here.</td></tr>
+  <tr><td class="ln">4</td><td class="cd"><span class="kw">ENV</span> UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy</td><td>Precompile <code>.py</code> → <code>.pyc</code> once at build, so containers start faster. Copy files instead of linking to uv's cache, which isn't kept in the image.</td></tr>
+</tbody>
+<tbody class="stg">  <tr class="stage"><td colspan="3">Dependencies (slow, rarely change → cached)</td></tr>
+  <tr><td class="ln">5</td><td class="cd"><span class="kw">COPY</span> pyproject.toml uv.lock README.md ./</td><td>Copy <b>only</b> the dependency files into <code>./</code> = <code>/app/</code>. Last argument is the destination in the image; the rest are sources from the build context.</td></tr>
+  <tr><td class="ln">6</td><td class="cd"><span class="kw">RUN</span> uv sync --locked --no-dev \
+    --no-install-project</td><td>Install dependencies only (httpx...) into <code>/app/.venv</code>. <code>--locked</code>: exactly uv.lock. <code>--no-dev</code>: skip pytest/ruff. <code>--no-install-project</code>: not pinger yet (its code isn't here).</td></tr>
+</tbody>
+<tbody class="stg">  <tr class="stage"><td colspan="3">Project (fast, changes often)</td></tr>
+  <tr><td class="ln">7</td><td class="cd"><span class="kw">COPY</span> src ./src</td><td>Now copy the source code.</td></tr>
+  <tr><td class="ln">8</td><td class="cd"><span class="kw">RUN</span> uv sync --locked --no-dev</td><td>Install pinger itself; creates <code>/app/.venv/bin/pinger</code> from <code>[project.scripts]</code>.</td></tr>
+</tbody>
+<tbody class="stg">  <tr class="stage"><td colspan="3">Run time</td></tr>
+  <tr><td class="ln">9</td><td class="cd"><span class="kw">ENV</span> PATH="/app/.venv/bin:$PATH"</td><td>Put the venv's <code>bin</code> <b>first</b> in the command search path, so <code>pinger</code> and the venv's <code>python</code> are found. The image version of "activating" a venv.</td></tr>
+  <tr><td class="ln">10</td><td class="cd"><span class="kw">ENTRYPOINT</span> ["pinger"]</td><td>What the container runs. Run-time arguments are <b>appended</b>: <code>-- https://example.com</code> → <code>pinger https://example.com</code>.</td></tr>
+</tbody>
+</table>
+
+<div class="note dk">
+  <span class="t">Checklist for any Dockerfile</span>
+  Small, pinned base image · pin tool versions · dependency files before source code · install from the lockfile without dev tools · <code>.dockerignore</code> for local junk · exec-form <code>ENTRYPOINT</code> · no secrets in the image · tag every build with a real version.
+</div>
+
+<h3 class="newpage">3.2 Key ideas</h3>
+<div class="cards">
+  <div class="card wide">
+    <h4>Layer caching: copy what rarely changes first</h4>
+    <p>Docker reuses a step's cached layer until its inputs change, then re-runs that step <b>and every step after it</b>. Splitting <code>uv sync</code> in two means a code edit skips the slow dependency install:</p>
+<pre class="cache">you edit src/pinger/__init__.py:
+  1-4  FROM, COPY uv, WORKDIR, ENV           <span class="hit">CACHED</span>
+  5    COPY pyproject.toml uv.lock README.md  <span class="hit">CACHED</span>  (unchanged)
+  6    RUN uv sync --no-install-project       <span class="hit">CACHED</span>  (slow step skipped)
+  7    COPY src ./src                         <span class="miss">RE-RUN</span>  (input changed)
+  8-10 RUN uv sync, ENV, ENTRYPOINT           <span class="miss">RE-RUN</span>  (after a change; fast)</pre>
+    <p class="muted">With a single <code>COPY . .</code> + <code>RUN uv sync</code>, every code edit would reinstall all dependencies.</p>
+  </div>
+</div>
+<div class="cards three">
+  <div class="card">
+    <h4>Exec form: <code>["pinger"]</code></h4>
+    <p>The JSON-list form runs pinger <b>directly as PID 1</b>. The shell form <code>ENTRYPOINT pinger</code> wraps it in <code>/bin/sh -c</code>: stop signals from Kubernetes hit the shell, not your app, and appended arguments are ignored.</p>
+  </div>
+  <div class="card">
+    <h4><code>ENTRYPOINT</code> vs <code>CMD</code></h4>
+    <p><code>ENTRYPOINT</code>: the fixed program. <code>CMD</code>: default arguments, replaced by any given at run time. Together: <code>ENTRYPOINT ["pinger"]</code> + <code>CMD ["https://example.com"]</code>.</p>
+  </div>
+  <div class="card">
+    <h4><code>.dockerignore</code></h4>
+    <p>Keeps files out of the build context, like <code>.gitignore</code>. Your macOS <code>.venv</code> must never reach a Linux image.</p>
+<pre>.venv  dist  .git  __pycache__
+.pytest_cache  .ruff_cache</pre>
+  </div>
+</div>
+
+<h3>3.3 Build the image and run it</h3>
+<p>Run from the folder holding the Dockerfile (<code>uv/pinger</code>). Docker Desktop and minikube keep <b>separate image stores</b>: Kubernetes only sees minikube's. Use a real tag, not <code>latest</code>, which makes Kubernetes pull from a registry. Either mistake gives <code>ErrImagePull</code>.</p>
+<table class="grp dk">
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody class="stg">
+  <tr class="stage"><td colspan="2">Build</td></tr>
+  <tr><td><code>docker build -t pinger:0.1.0 .</code></td><td>Build into Docker Desktop's store. <code>-t</code> name:tag (no tag = <code>latest</code>). <code>.</code> is the <b>build context</b>: the folder <code>COPY</code> reads from. <code>-f FILE</code> for another Dockerfile name.</td></tr>
+  <tr><td><code>minikube image build -t pinger:0.1.0 .</code></td><td>Same, but built <b>inside minikube's store</b>, so Kubernetes can use it directly. The usual choice for the cluster.</td></tr>
+  <tr><td><code>minikube image load pinger:0.1.0</code></td><td>Copy an image built with <code>docker build</code> into minikube.</td></tr>
+</tbody>
+<tbody class="stg">
+  <tr class="stage"><td colspan="2">Check and run</td></tr>
+  <tr><td><code>docker images pinger</code><br><code>minikube image ls | grep pinger</code></td><td>Confirm the image exists (name, tag, size) in each store.</td></tr>
+  <tr><td><code>docker run --rm pinger:0.1.0 https://example.com</code></td><td>Run a container locally. Arguments are appended to <code>ENTRYPOINT</code>: runs <code>pinger https://example.com</code>. <code>--rm</code> deletes the container on exit.</td></tr>
+  <tr><td><code>kubectl run pinger-test --rm -ti \</code><br><code>&nbsp;&nbsp;--image=pinger:0.1.0 --restart=Never \</code><br><code>&nbsp;&nbsp;-- https://example.com</code></td><td>Smoke test: one bare Pod. <code>-ti</code> streams its output, <code>--rm</code> deletes it after, <code>--restart=Never</code> runs it once. Args after <code>--</code> go to the container.</td></tr>
+</tbody>
+</table>
+
+</section>
+
+<!-- ================= KUBERNETES ================= -->
+<section id="s4" class="s-k8">
+<h2><span class="n">4</span>Kubernetes: Concepts</h2>
+
+<h3>4.1 What it's for</h3>
+<p>A <b>container orchestrator</b>: you declare the <b>desired state</b> (which images, how many copies, how to reach them) and Kubernetes keeps the cluster matching it.</p>
+<div class="feats">
+  <div><b>Scheduling</b>Picks a machine for each container.</div>
+  <div><b>Self-healing</b>Restarts crashed containers; replaces lost Pods.</div>
+  <div><b>Scaling</b>Adds or removes copies of an app.</div>
+  <div><b>Service discovery + load balancing</b>A stable name; traffic spread across copies.</div>
+  <div><b>Rolling updates + rollbacks</b>New versions with no downtime; quick revert.</div>
+  <div><b>Declarative config</b>Describe it in YAML; Kubernetes keeps it so.</div>
+</div>
+
+<h3>4.2 The physical stack (where things run)</h3>
+<div class="stackrow">
+<div class="stack">
+  <div class="layer">
+    <div class="tag"><small>Layer 1</small>Process</div>
+    <div class="body">A program on one machine, using whatever that machine has installed.
+      <div class="prob"><b>Problem:</b> "works on my laptop" isn't guaranteed on the server.</div></div>
+  </div>
+  <div class="layer">
+    <div class="tag"><small>Layer 2</small>Image, container</div>
+    <div class="body">A <b>Dockerfile</b> builds code + dependencies into an <b>image</b>; running it gives a <b>container</b>.
+      <div class="prob"><b>Problem:</b> a lone container doesn't restart, scale, or know about other machines.</div></div>
+  </div>
+  <div class="layer">
+    <div class="tag"><small>Layer 3</small>Pod</div>
+    <div class="body">Wraps a container (usually one) and adds an <b>IP</b>, <b>labels</b>, a <b>restart policy</b> and <b>resource limits</b> (below). A second <b>sidecar</b> container is added only for a helper that must share the machine, files or <code>localhost</code>, and live and die with the app.</div>
+  </div>
+  <div class="layer">
+    <div class="tag"><small>Layer 4</small>Node</div>
+    <div class="body">A machine (physical or VM) that runs <b>many Pods</b> on its CPU, memory, disk and network. A container is <b>not</b> a machine, just a walled-off process on the node. Its agents:
+      <ul>
+        <li><b>kubelet</b>: runs its Pods, restarts crashed containers, reports status</li>
+        <li><b>containerd</b>: pulls images, starts and stops containers</li>
+        <li><b>kube-proxy</b>: routes Service traffic to Pods</li>
+      </ul></div>
+  </div>
+  <div class="layer">
+    <div class="tag"><small>Layer 5</small>Cluster, namespace</div>
+    <div class="body">A <b>cluster</b> is one control plane + its worker nodes. The <b>control plane decides</b> (controllers: what should exist; scheduler: where), the <b>nodes do the work</b>. <b>Namespaces</b> are folders inside one cluster, spanning all its nodes (both below).</div>
+  </div>
+</div>
+  <div class="nest">
+    <div>Cluster
+      <div>Node
+        <div>Pod
+          <div>Container
+            <div>Process</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="podset">
+<h4>Pod settings: restart policy and resources</h4>
+<div class="two">
+  <div class="card k8c">
+    <h4><code>restartPolicy</code>: when a container exits</h4>
+    <p>The <b>kubelet</b> restarts it <b>in the same Pod</b> (same IP, <code>RESTARTS</code> +1). Repeated crashes wait longer each time (10s, 20s... 5 min): <code>CrashLoopBackOff</code>.</p>
+    <table class="mini">
+      <tr><td><code>Always</code> <span class="muted">default</span></td><td>Any exit. Required for Deployments.</td></tr>
+      <tr><td><code>OnFailure</code></td><td>Non-zero exit only. Jobs.</td></tr>
+      <tr><td><code>Never</code></td><td>Jobs: each retry is a <b>new Pod</b>.</td></tr>
+    </table>
+  </div>
+  <div class="card k8c">
+    <h4><code>resources</code>: CPU and memory per container</h4>
+<pre>resources:
+  requests:            # reserved
+    cpu: "250m"        # 1/4 of a core
+    memory: "128Mi"
+  limits:              # maximum
+    cpu: "500m"
+    memory: "256Mi"</pre>
+    <p><b>Requests:</b> the scheduler needs a node with that much free room, else the Pod stays <code>Pending</code>.</p>
+    <p><b>Limits:</b> over CPU → <b>throttled</b> (slowed). Over memory → <b>OOMKilled</b> (exit 137).</p>
+  </div>
+</div>
+</div>
+
+<div class="two keep" style="margin-top:6px">
+<div>
+<h4>Clusters: one control plane + its nodes</h4>
+<pre>prod-eu                prod-us
+ ├ control plane A      ├ control plane B
+ └ nodes A1, A2, A3     └ nodes B1, B2
+ independent: own records and decisions</pre>
+<ul class="tight">
+  <li>Controllers only manage <b>their own</b> cluster. Companies run many (per region, environment, team).</li>
+  <li><b>kubectl talks to one at a time</b>, its <b>context</b>: <code>kubectl config current-context</code>, <code>use-context prod-eu</code>. Check it before every command at work.</li>
+  <li>Production: control plane on dedicated nodes (often 3). minikube: one node does both.</li>
+</ul>
+</div>
+<div>
+<h4>Namespaces: folders inside one cluster</h4>
+<pre>Cluster prod-eu
+ ├ kube-system  etcd, apiserver, coredns
+ ├ trading      Deployment pricer
+ ├ risk         Deployment pricer  # OK!
+ └ monitoring   prometheus, grafana</pre>
+<ul class="tight">
+  <li><b>Separate:</b> names (both teams can have <code>pricer</code>), DNS (<code>pricer.trading.svc.cluster.local</code>), permissions and quotas; deleting one deletes everything in it.</li>
+  <li><b>Shared:</b> nodes. Pods from <code>trading</code> and <code>risk</code> can run on the same machine.</li>
+</ul>
+</div>
+</div>
+<pre>kubectl get namespaces                                # list them (default: "default")
+kubectl get pods -n kube-system                       # one namespace
+kubectl get pods -A                                   # all namespaces
+kubectl create namespace dev                          # create one
+kubectl config set-context --current --namespace=dev  # make dev your default</pre>
+
+<h3 class="newpage">4.3 The control plane (what makes it happen)</h3>
+
+<figure class="cpsvg">
+<svg viewBox="0 0 720 250" width="100%" role="img" aria-label="Control plane request paths">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5b6475"/></marker>
+    <marker id="ahp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b0407a"/></marker>
+    <marker id="aht" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0f7c74"/></marker>
+  </defs>
+  <style>
+    .bx{stroke-width:1.5} .t{font:600 13px -apple-system,Helvetica,Arial,sans-serif;fill:#1c2230;text-anchor:middle}
+    .s{font:11px -apple-system,Helvetica,Arial,sans-serif;fill:#5b6475;text-anchor:middle}
+    .l{font:600 11px -apple-system,Helvetica,Arial,sans-serif;text-anchor:middle}
+  </style>
+  <!-- path 1 label band -->
+  <!-- kubectl -->
+  <rect class="bx" x="8" y="78" width="150" height="56" rx="8" fill="#f5f7fa" stroke="#5b6475"/>
+  <text class="t" x="83" y="102">kubectl</text><text class="s" x="83" y="120">you, via HTTP</text>
+  <!-- apiserver -->
+  <rect class="bx" x="262" y="78" width="176" height="56" rx="8" fill="#faecf3" stroke="#b0407a"/>
+  <text class="t" x="350" y="102">kube-apiserver</text><text class="s" x="350" y="120">the only front door</text>
+  <!-- etcd -->
+  <rect class="bx" x="262" y="188" width="176" height="52" rx="8" fill="#faecf3" stroke="#b0407a"/>
+  <text class="t" x="350" y="210">etcd</text><text class="s" x="350" y="227">stores every object</text>
+  <!-- right components -->
+  <rect class="bx" x="548" y="8" width="164" height="50" rx="8" fill="#faecf3" stroke="#b0407a"/>
+  <text class="t" x="630" y="29">kube-scheduler</text><text class="s" x="630" y="46">assigns Pods to nodes</text>
+  <rect class="bx" x="548" y="81" width="164" height="50" rx="8" fill="#faecf3" stroke="#b0407a"/>
+  <text class="t" x="630" y="102">controller-manager</text><text class="s" x="630" y="119">runs the controllers</text>
+  <rect class="bx" x="548" y="154" width="164" height="50" rx="8" fill="#e6f4f2" stroke="#0f7c74"/>
+  <text class="t" x="630" y="175">kubelet</text><text class="s" x="630" y="192">(on each node) runs Pods</text>
+  <!-- path 1: kubectl -> apiserver -> etcd -->
+  <line x1="160" y1="106" x2="258" y2="106" stroke="#5b6475" stroke-width="2" marker-end="url(#ah)"/>
+  <text class="l" x="209" y="97" style="fill:#5b6475">① request</text>
+  <line x1="350" y1="137" x2="350" y2="184" stroke="#b0407a" stroke-width="2" marker-start="url(#ahp)" marker-end="url(#ahp)"/>
+  <text class="l" x="360" y="160" style="fill:#b0407a;text-anchor:start">② store / read</text>
+  <text class="s" x="360" y="174" style="text-anchor:start">only path to etcd</text>
+  <!-- path 2: components <-> apiserver (watch + write back) -->
+  <line x1="545" y1="36" x2="442" y2="90" stroke="#0f7c74" stroke-width="2" marker-start="url(#aht)" marker-end="url(#aht)"/>
+  <line x1="545" y1="106" x2="442" y2="106" stroke="#0f7c74" stroke-width="2" marker-start="url(#aht)" marker-end="url(#aht)"/>
+  <line x1="545" y1="176" x2="442" y2="122" stroke="#0f7c74" stroke-width="2" marker-start="url(#aht)" marker-end="url(#aht)"/>
+  <text class="l" x="494" y="20" style="fill:#0f7c74">③ watch</text>
+  <text class="l" x="494" y="34" style="fill:#0f7c74">④ write back</text>
+</svg>
+<figcaption>
+  <span><b>Path 1 (your change):</b> kubectl → API server (checks it) → etcd (stores it).</span>
+  <span><b>Path 2 (making it happen):</b> the others <b>watch the API server</b>, act, and <b>write back</b>. They never touch etcd.</span>
+</figcaption>
+</figure>
+<table class="feat roles">
+  <thead><tr><th>Component</th><th>Role</th></tr></thead>
+  <tr><td>kubectl</td><td>Client: sends HTTP requests to the API server.</td></tr>
+  <tr><td>kube-apiserver</td><td>The only front door: checks who you are, if you're allowed and if the object is valid, then saves it.</td></tr>
+  <tr><td>etcd</td><td>Key-value store of every object (spec + status). Only the API server talks to it.</td></tr>
+  <tr><td>kube-scheduler</td><td>Watches for Pods with no node; picks one with enough free CPU/memory; writes <code>nodeName</code>.</td></tr>
+  <tr><td>kube-controller-manager</td><td>Runs the controllers: each watches one kind of object and writes records (e.g. a Pod) until status matches spec.</td></tr>
+  <tr><td>kubelet</td><td>Watches for Pods on <b>its</b> node, has containerd start them, writes back status and heartbeats.</td></tr>
+</table>
+
+<div class="keep">
+<div class="note">
+  <span class="t">Key idea: spec vs status, and who talks to whom</span>
+  Every object has a <b>spec</b> (what you want) and a <b>status</b> (what's happening). The <b>API server is passive</b>: it validates, stores and notifies, but never gives orders. Controllers, scheduler and kubelets <b>watch</b> it, act when spec and status differ, and <b>write the result back</b>.
+</div>
+</div>
+<div class="keep">
+<p style="margin-top:8px"><b>Example:</b> <code>kubectl scale deployment/bootcamp --replicas=4</code></p>
+<div class="flow">
+  <div class="step"><div class="num">1</div><div><b>kubectl → API server:</b> "set replicas to 4". Checked and stored in etcd. <b>That's all it does.</b></div></div>
+  <div class="step"><div class="num">2</div><div><b>ReplicaSet controller</b> notices "4 wanted, 3 exist" and writes a new Pod record.</div></div>
+  <div class="step"><div class="num">3</div><div><b>Scheduler</b> notices a Pod with no node and writes <code>nodeName: minikube</code>.</div></div>
+  <div class="step"><div class="num">4</div><div><b>Kubelet</b> on minikube sees a new Pod for its node, has containerd start it, writes <code>Running</code>.</div></div>
+</div>
+</div>
+
+<div class="keep">
+<h4>Who fixes what: two levels of self-healing</h4>
+<table class="feat2">
+  <thead><tr><th>What failed</th><th>Who fixes it</th><th>How</th></tr></thead>
+  <tr><td>A <b>container</b></td><td><b>kubelet</b>, on its own</td><td>Restarts it in the same Pod (same IP, <code>RESTARTS</code> +1).</td></tr>
+  <tr><td>A <b>Pod</b> or <b>node</b></td><td><b>Controllers + scheduler</b></td><td>Node marked <code>NotReady</code> (~40s), Pods evicted, ReplicaSet creates replacements on healthy nodes.</td></tr>
+</table>
+<p class="muted">Control plane down? Running Pods keep running; you just can't change anything until it's back.</p>
+</div>
+
+<!-- ================= OBJECTS ================= -->
+<h3>4.4 Kubernetes objects</h3>
+<p>An <b>object</b> is a <b>record</b> stored through the API server (in etcd). Pods, Deployments, Services, Jobs... all share this shape:</p>
+<div class="two">
+<pre>apiVersion: apps/v1  # API group + version
+kind: Deployment     # type of object
+metadata:            # name, labels
+  name: kubernetes-bootcamp
+spec:                # desired (you write)
+  ...
+status:              # actual (Kubernetes)
+  ...</pre>
+<div class="note" style="margin:6px 0">
+  <span class="t">An object is just data</span>
+  It does nothing on its own. A <b>controller</b> (or the scheduler and kubelet, for Pods) acts on it to make reality match its <code>spec</code>; the table shows which.
+  <p style="margin-top:5px"><code>kubectl get deployment,rs,pods</code> shows all three layers; <code>kubectl api-resources</code> lists every kind.</p>
+</div>
+</div>
+
+<table class="objs keep">
+  <thead><tr><th>Object</th><th>What it's for</th><th>Controller</th><th>Watches</th><th>Creates or changes</th></tr></thead>
+  <tr class="noctl"><td>Pod<span class="ver">v1</span></td><td>Containers + IP, labels, restart policy, limits. Disposable.</td><td><span class="muted">none</span></td><td colspan="2">Scheduler assigns a node, kubelet runs it. <b>Nothing recreates a lost Pod.</b></td></tr>
+  <tr><td>ReplicaSet<span class="ver">apps/v1</span></td><td>Keeps N identical Pods running.</td><td>ReplicaSet</td><td>Pods matching its selector</td><td>Creates or deletes <b>Pods</b> until there are N</td></tr>
+  <tr><td>Deployment<span class="ver">apps/v1</span></td><td>Versions: rolling updates, history, rollback.</td><td>Deployment</td><td>Its Pod template and replicas</td><td>Creates a <b>ReplicaSet</b> per version; scales new up, old down</td></tr>
+  <tr><td>Service<span class="ver">v1</span></td><td>Stable name and IP; load-balances across Pods.</td><td>EndpointSlice</td><td>Pods matching its selector, and their readiness</td><td>Writes <b>EndpointSlices</b> (read by kube-proxy and CoreDNS)</td></tr>
+  <tr class="noctl"><td>EndpointSlice<span class="ver">discovery.k8s.io/v1</span></td><td>Current ready Pod IPs behind a Service.</td><td><span class="muted">none</span></td><td colspan="2">Data: written by the EndpointSlice controller, read by kube-proxy</td></tr>
+  <tr><td>Job<span class="ver">batch/v1</span></td><td>Runs Pods to completion; judged by exit code.</td><td>Job</td><td>Its Pods' exit codes</td><td>Creates <b>Pods</b> (retries); sets Complete / Failed</td></tr>
+  <tr><td>CronJob<span class="ver">batch/v1</span></td><td>Runs a Job on a schedule.</td><td>CronJob</td><td>The clock and its schedule</td><td>Creates <b>Jobs</b>; deletes old ones past the history limits</td></tr>
+  <tr><td>Namespace<span class="ver">v1</span></td><td>A folder of objects.</td><td>Namespace</td><td>Namespaces being deleted</td><td>Deletes <b>everything inside</b></td></tr>
+  <tr><td>Node<span class="ver">v1</span></td><td>A machine that runs Pods.</td><td>Node</td><td>Node heartbeats (sent by kubelets)</td><td>Marks node <b>NotReady</b>; evicts its Pods</td></tr>
+  <tr class="noctl"><td>ConfigMap, Secret<span class="ver">v1</span></td><td>Config values; passwords and keys.</td><td><span class="muted">none</span></td><td colspan="2">Data: the kubelet reads them into Pods that use them</td></tr>
+</table>
+
+<h4>How objects connect: owners vs selectors</h4>
+<pre>Deployment ──owns──▶ ReplicaSet ──owns──▶ Pods      # one ReplicaSet per version
+CronJob    ──owns──▶ Job        ──owns──▶ Pods      # Jobs named pinger-cron-&lt;minutes&gt;
+Service    ··selects by label···········▶ Pods      # routes traffic, does NOT own them</pre>
+<ul class="tight">
+  <li><b>Owner references → garbage collection:</b> each child records its owner (<code>metadata.ownerReferences</code>). Delete the owner and the <b>garbage collector</b> (a controller that acts on every object) deletes its children: a Deployment takes its ReplicaSets and Pods with it, a CronJob its Jobs.</li>
+  <li><b>Never create bare Pods:</b> no controller watches a Pod, so a lost one is gone for good. Create a Deployment or Job and get all the layers for free.</li>
+</ul>
+
+</section>
+
+<!-- ================= K8S COMMANDS ================= -->
+<section id="s5" class="s-k8">
+<h2><span class="n">5</span>Kubernetes: Commands by Task</h2>
+
+<div class="cmdblock">
+<h3>5.1 Set up a cluster</h3>
+<table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tr><td><code>open -a Docker</code></td><td>Starts Docker in the background (minikube's node runs as a Docker container).</td></tr>
+  <tr><td><code>minikube start</code></td><td>Creates or starts the local cluster.</td></tr>
+  <tr><td><code>minikube status</code></td><td>Checks that everything is running.</td></tr>
+  <tr><td><code>kubectl version</code></td><td>Shows the client and server versions.</td></tr>
+  <tr><td><code>kubectl get nodes</code></td><td>Lists all nodes and their status.</td></tr>
+  <tr><td><code>kubectl cluster-info</code></td><td>Shows where the cluster (API server) is.</td></tr>
+  <tr><td><code>kubectl config view</code></td><td>Shows the kubeconfig file: how kubectl knows where to connect and as whom.</td></tr>
+  <tr><td><code>kubectl config current-context</code><br><code>kubectl config use-context NAME</code></td><td>Which cluster kubectl talks to; switch clusters. Always check before running commands at work.</td></tr>
+  <tr><td><code>minikube stop</code> / <code>minikube delete</code></td><td>Stop keeps everything for next time; delete removes the cluster and its images.</td></tr>
+  <tr><td><code>minikube ssh</code></td><td>Opens a shell on the node itself (e.g. <code>sudo crictl ps</code> lists real containers).</td></tr>
+</table>
+</div>
+
+<div class="cmdblock">
+<h3>5.2 Deploy an app</h3>
+<table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tr><td><code>kubectl create deployment NAME --image=IMAGE</code></td><td>Creates a Deployment object. Everything else follows automatically (see below).</td></tr>
+  <tr><td><code>kubectl get deployments</code></td><td>Checks the Deployment: READY, UP-TO-DATE, AVAILABLE.</td></tr>
+  <tr><td><code>kubectl proxy</code></td><td>Opens an authenticated doorway to the <b>API server</b> at <code>localhost:8001</code>, so you can call the Kubernetes API with plain HTTP. For debugging only.</td></tr>
+</table>
+<div class="flow">
+  <div class="step"><div class="num">1</div><div>kubectl sends "create a Deployment with this name and image" to the API server, which stores it in etcd.</div></div>
+  <div class="step"><div class="num">2</div><div>The Deployment controller creates a ReplicaSet; the ReplicaSet controller creates a Pod (desired: 1 replica).</div></div>
+  <div class="step"><div class="num">3</div><div>The scheduler picks a node for the Pod.</div></div>
+  <div class="step"><div class="num">4</div><div>The kubelet on that node tells containerd to pull the image and start the container.</div></div>
+</div>
+</div>
+
+<div class="cmdblock">
+<h3>5.3 Explore your app (debugging, in this order)</h3>
+<table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tr><td><code>kubectl get pods</code><br><code>kubectl get pods -o wide</code></td><td>Quick overview: tells you <i>that</i> something is wrong, not why. <code>-o wide</code> adds IP and NODE.</td></tr>
+  <tr><td><code>kubectl describe pod POD</code></td><td>Prints the Pod object: node, labels, IP, containers, and <b>Events</b> at the bottom (the best debugging output).</td></tr>
+  <tr><td><code>kubectl logs POD</code></td><td>Whatever the app wrote to stdout/stderr. Flags: <code>-f</code> follow live, <code>--previous</code> last crashed container, <code>--tail=50</code>.</td></tr>
+  <tr><td><code>kubectl exec POD -- COMMAND</code><br><code>kubectl exec -ti POD -- bash</code></td><td>Runs a command inside a container (<code>-c</code> to pick one if there are several). Only commands that exist in the image work. Changes are lost on restart.</td></tr>
+  <tr><td><code>kubectl get events --sort-by=.lastTimestamp</code></td><td>Recent events for the whole namespace, newest last.</td></tr>
+  <tr><td><code>kubectl get all</code></td><td>Deployments, ReplicaSets, Pods and Services in one view.</td></tr>
+</table>
+<table class="feat">
+  <thead><tr><th>Pod status</th><th>Meaning and where to look</th></tr></thead>
+  <tr><td>Pending</td><td>Not on a node yet (often not enough CPU/memory). <code>describe</code> → Events.</td></tr>
+  <tr><td>ErrImagePull / ImagePullBackOff</td><td>Image can't be downloaded: wrong name or tag, or no access. <code>describe</code> → Events.</td></tr>
+  <tr><td>CrashLoopBackOff</td><td>App starts then crashes, and kubelet retries with growing waits. <code>logs --previous</code>.</td></tr>
+  <tr><td>RESTARTS &gt; 0</td><td>Container crashed and was restarted inside the same Pod.</td></tr>
+</table>
+<div class="note">
+  <span class="t">Tip</span>
+  Use <code>deployment/NAME</code> instead of a Pod name, e.g. <code>kubectl logs deployment/kubernetes-bootcamp</code>. kubectl picks a Pod for you, and it keeps working after Pods are replaced.
+</div>
+</div>
+
+<div class="cmdblock">
+<h3>5.4 Expose your app with a Service</h3>
+<p class="muted">Pods keep being replaced with new names and IPs. A Service gives them one stable name and IP, and spreads traffic across them.</p>
+<table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tr><td><code>kubectl get services</code></td><td>Lists all Services.</td></tr>
+  <tr><td><code>kubectl expose deployment/NAME --type=NodePort --port 8080</code></td><td>Creates a Service that selects the Deployment's Pods by label.</td></tr>
+  <tr><td><code>kubectl describe service/NAME</code></td><td>Shows Selector, IP, ports, and <b>Endpoints</b> (the live list of Pod IPs behind it).</td></tr>
+  <tr><td><code>kubectl port-forward service/NAME 9000:8080</code></td><td>Temporary tunnel from your Mac's port 9000 to the Service's port 8080 (<code>LOCAL:REMOTE</code>). Only for you, until Ctrl+C.</td></tr>
+  <tr><td><code>kubectl delete service -l app=NAME</code></td><td>Deletes Services with this label. The Pods keep running.</td></tr>
+  <tr><td><code>kubectl run tmp --rm -ti --image=curlimages/curl --restart=Never -- curl NAME:8080</code></td><td>Throwaway Pod to call a Service from <b>inside</b> the cluster, where the Service name works as a DNS hostname.</td></tr>
+</table>
+<table class="feat">
+  <thead><tr><th>Service type</th><th>Who can reach it</th></tr></thead>
+  <tr><td>ClusterIP (default)</td><td>Only things inside the cluster. Service-to-service traffic.</td></tr>
+  <tr><td>NodePort</td><td>Inside the cluster + anyone who can reach a node on port 30000-32767. Dev and testing.</td></tr>
+  <tr><td>LoadBalancer</td><td>Also an external IP from a cloud load balancer. Production on cloud.</td></tr>
+</table>
+<div class="note">
+  <span class="t">Every Service gets a DNS name automatically</span>
+  <code>kubectl expose deployment/kubernetes-bootcamp --port 8080</code> creates a Service, and CoreDNS adds a name for it. Inside the cluster, both URLs reach the same Service:
+<pre style="background:#fff">http://kubernetes-bootcamp.default.svc.cluster.local:8080   # full: any namespace
+       └──── service ────┘ └─────┘ └──── suffix ───┘
+                          namespace
+http://kubernetes-bootcamp:8080                             # short: same namespace</pre>
+  The short name works because each Pod's DNS search list adds <code>.default.svc.cluster.local</code> for it. The port is the Service's <code>--port</code>. These names only work <b>inside the cluster</b> (e.g. from a Job); from your Mac, use <code>port-forward</code>.
+</div>
+<div class="note">
+  <span class="t">The general flow</span>
+<pre style="background:#fff">1. kubectl create deployment  → Deployment → ReplicaSet → Pod (app on :8080, Pod IP)
+2. kubectl expose deployment  → Service: stable IP + name, selects Pods by label
+3. kubectl port-forward svc   → tunnel: Mac localhost:9000 → Service :8080 → Pod :8080
+4. curl localhost:9000        → "Hello Kubernetes bootcamp!"</pre>
+</div>
+</div>
+
+<div class="cmdblock">
+<h3>5.5 Labels</h3>
+<table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tr><td><code>kubectl label pods POD version=v1</code></td><td>Adds a label to a Pod (<code>version-</code> removes it).</td></tr>
+  <tr><td><code>kubectl get pods --show-labels</code></td><td>Lists Pods with their labels.</td></tr>
+  <tr><td><code>kubectl get pods -l version=v1</code></td><td>Filters Pods by label.</td></tr>
+</table>
+<p class="muted">Labels are just tags. Their power is that selectors (ReplicaSets, Services, <code>-l</code>) are built on them: labels are the only link between Pods and what manages or routes to them.</p>
+</div>
+
+<div class="cmdblock">
+<h3>5.6 Scale your app and load balancing</h3>
+<table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tr><td><code>kubectl get rs</code></td><td>Shows the ReplicaSet: DESIRED, CURRENT, READY. When all three match, actual state matches desired state.</td></tr>
+  <tr><td><code>kubectl scale deployment/NAME --replicas=4</code></td><td>Changes one number in the Deployment's spec. Controllers then create the new Pods, each with its own IP.</td></tr>
+</table>
+<ul>
+  <li><b>Self-healing:</b> delete a Pod and the ReplicaSet replaces it, because actual (3) no longer matches desired (4).</li>
+  <li><b>The Service updates itself:</b> it holds a selector rule, not a list of Pods. Any Pod with label <code>app=kubernetes-bootcamp</code> is added to its Endpoints automatically.</li>
+  <li><b>Load balancing:</b> requests sent to the Service are spread across all its Pods by kube-proxy's rules on each node, per connection and at random. (port-forward bypasses this and sticks to one Pod.)</li>
+</ul>
+</div>
+
+<div class="cmdblock">
+<h3>5.7 Rolling update and rollback</h3>
+<pre>kubectl set image deployment/kubernetes-bootcamp  kubernetes-bootcamp=IMAGE:v2
+                  └─── which Deployment ───────┘  └─ container ─────┘ └ new image</pre>
+<p>Changing the Pod template means "new version". The Deployment controller creates a <b>second ReplicaSet</b> for v2, then gradually moves Pods from old to new, only stopping old Pods once new ones are ready (<code>maxSurge</code> / <code>maxUnavailable</code>, both 25% by default). A broken image gets stuck while old Pods keep serving.</p>
+<table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tr><td><code>kubectl rollout status deployment/NAME</code></td><td>Waits and reports until the rollout succeeds or fails. Used by CI/CD.</td></tr>
+  <tr><td><code>kubectl rollout history deployment/NAME</code></td><td>Lists revisions (one per template change).</td></tr>
+  <tr><td><code>kubectl rollout undo deployment/NAME</code></td><td>Goes back to the <b>previous revision</b>. <code>--to-revision=N</code> picks a specific one.</td></tr>
+</table>
+</div>
+
+<div class="cmdblock">
+<h3>5.8 Declarative: apply using YAML</h3>
+<p>Every manifest has four top-level keys: <code>apiVersion</code>, <code>kind</code>, <code>metadata</code>, <code>spec</code>. Kubernetes adds <code>status</code>, which you never write. <code>-f</code> means "read the objects from this file".</p>
+<table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tr><td><code>kubectl apply -f bootcamp.yaml</code></td><td>Makes the cluster match this file (create or update). Idempotent: safe to run repeatedly.</td></tr>
+  <tr><td><code>kubectl diff -f bootcamp.yaml</code></td><td>Shows what <code>apply</code> <b>would</b> change: <code>-</code> lines removed, <code>+</code> lines added. Changes nothing.</td></tr>
+  <tr><td><code>kubectl delete -f bootcamp.yaml</code></td><td>Deletes the objects defined in this file.</td></tr>
+  <tr><td><code>kubectl create deployment ... --dry-run=client -o yaml</code></td><td>Prints a starting manifest instead of creating anything.</td></tr>
+  <tr><td><code>kubectl get deployment NAME -o yaml</code></td><td>The full live object, including defaults and <code>status</code>.</td></tr>
+  <tr><td><code>kubectl explain deployment.spec.strategy</code></td><td>Built-in docs for any field.</td></tr>
+</table>
+<div class="note warn">
+  <span class="t">Imperative vs declarative</span>
+  Commands like <code>scale</code> and <code>set image</code> are for learning and emergencies. Real teams keep YAML in git and let CI/CD run <code>apply</code>. The next <code>apply</code> silently undoes any manual change.
+</div>
+</div>
+
+</section>
+
+<!-- ================= K8S JOBS ================= -->
+<section id="s6" class="s-k8">
+<h2><span class="n">6</span>Kubernetes: Jobs (Batch Work)</h2>
+
+<div class="cmdblock">
+<h3>6.1 Jobs: run to completion</h3>
+<p>A Deployment runs forever; a <b>Job</b> runs until it <b>exits</b> and is judged by the <b>exit code</b>: <code>0</code> → <b>Complete</b>; non-zero → Pod <code>Error</code>, retried, then <b>Failed</b>.</p>
+<pre>apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pinger-bad
+spec:
+  backoffLimit: 2              # 1 try + up to 2 retries; waits grow (10s, 20s, 40s...)
+  template:
+    spec:
+      restartPolicy: Never     # each retry is a NEW Pod, so every attempt's logs are kept
+      containers:
+        - name: pinger
+          image: pinger:0.1.0  # args below are APPENDED to its ENTRYPOINT
+          args: ["http://kubernetes-bootcamp:8080", "http://does-not-exist:8080"]</pre>
+<pre>kubectl create job NAME --image=IMG -- pinger URL   # imperative; after -- replaces ENTRYPOINT
+kubectl apply -f k8s/pinger-job.yaml                # create it from YAML
+kubectl get jobs                                    # STATUS, COMPLETIONS (1/1 = done)
+kubectl get pods -l job-name=NAME                   # its Pods (labelled job-name=NAME)</pre>
+</div>
+
+<div class="cmdblock">
+<h3>6.2 Debugging a failed Job</h3>
+<div class="flow">
+  <div class="step"><div class="num">1</div><div><b>Spot it:</b> <code>kubectl get jobs</code> → <code>pinger-bad   Failed   0/1</code></div></div>
+  <div class="step"><div class="num">2</div><div><b>What happened, and when:</b> <code>kubectl describe job pinger-bad</code></div></div>
+</div>
+<pre>Backoff Limit:  2
+Pods Statuses:  0 Active (0 Ready) / 0 Succeeded / 3 Failed
+Events:
+  86s  SuccessfulCreate      Created pod: pinger-bad-htvw2   # attempt 1 → exit 1
+  75s  SuccessfulCreate      Created pod: pinger-bad-kw7rj   # retry 1 (~10s later)
+  55s  SuccessfulCreate      Created pod: pinger-bad-lkfxg   # retry 2 (~20s later)
+  52s  BackoffLimitExceeded  Job has reached the specified backoff limit</pre>
+<div class="flow">
+  <div class="step"><div class="num">3</div><div><b>Why it failed:</b> <code>kubectl logs job/pinger-bad</code> (one attempt) or <code>kubectl logs -l job-name=pinger-bad</code> (all attempts)</div></div>
+</div>
+<pre>http://kubernetes-bootcamp:8080: 200 in 14 ms
+http://does-not-exist:8080: DOWN (ConnectError: [Errno -2] Name or service not known)</pre>
+<div class="flow">
+  <div class="step"><div class="num">4</div><div><b>Root cause:</b> no Service <code>does-not-exist</code> → DNS fails → DOWN → <b>exit 1</b> → retried → Failed. Fix the URL and re-run. Kubernetes only sees the exit code: a checker that always exits 0 would hide this.</div></div>
+</div>
+<div class="note warn">
+  <b>Trap:</b> <code>kubectl logs job pinger-bad</code> → <code>pods "job" not found</code>. <code>logs</code> reads its arguments as <code>POD [CONTAINER]</code>, so this is a command typo, not the Job's failure. Use <code>job/pinger-bad</code> (<code>logs</code> and <code>exec</code> need the slash).
+</div>
+</div>
+
+</section>
+
+<!-- ================= CHECKPOINT ================= -->
+<section id="s7" class="s-k8">
+<h2><span class="n">7</span>Kubernetes Checkpoint: Questions and Answers</h2>
+<p class="muted">Cover the answers and try each question in your own words first.</p>
+<div class="qa">
+  <div class="q"><span class="qn">1</span><div><b>What does "desired state and reconciliation" mean? Give an example you saw happen.</b>
+    <p><b>Desired state</b> is what you declare you want (e.g. 3 replicas). <b>Reconciliation</b> is a loop controllers run all the time: compare actual with desired, then act to close the gap. Example: I deleted a Pod, the ReplicaSet saw 2 instead of 3, and created a new one.</p></div></div>
+  <div class="q"><span class="qn">2</span><div><b>What's the difference between a Pod, a ReplicaSet and a Deployment? Why almost never create Pods directly?</b>
+    <p>A <b>Pod</b> wraps containers and adds an IP, labels, restart policy and limits; it's disposable. A <b>ReplicaSet</b> keeps N identical Pods running. A <b>Deployment</b> manages ReplicaSets (one per version) for rolling updates and rollback. A bare Pod has no owner, so nothing replaces it if it dies, and it can't be scaled or rolled out.</p></div></div>
+  <div class="q"><span class="qn">3</span><div><b>Why do Services exist? What would break without them?</b>
+    <p>Pods are replaced all the time and get new IPs, and with several replicas there are several IPs. A Service gives one stable name and IP and load-balances across the current Pods. Without it, every client would have to track changing Pod IPs.</p></div></div>
+  <div class="q"><span class="qn">4</span><div><b>How does a Service know which Pods to send traffic to?</b>
+    <p>Its <b>label selector</b> (e.g. <code>app=kubernetes-bootcamp</code>). Ready Pods with matching labels appear in its Endpoints, which update automatically. Remove a Pod's label and it drops out.</p></div></div>
+  <div class="q"><span class="qn">5</span><div><b>What are the four Service types, and which is the default?</b>
+    <p><b>ClusterIP</b> (default, internal only), <b>NodePort</b> (a port on every node), <b>LoadBalancer</b> (an external cloud load balancer), <b>ExternalName</b> (a DNS alias to an outside name).</p></div></div>
+  <div class="q"><span class="qn">6</span><div><b>During a rolling update to a broken image, why did the app keep serving traffic?</b>
+    <p>Old Pods are only removed as new ones become ready. The new Pods hit <code>ImagePullBackOff</code> and never became ready, so the rollout stalled with at most <code>maxUnavailable</code> (25%) of old Pods taken down; the rest kept serving.</p></div></div>
+  <div class="q"><span class="qn">7</span><div><b>What does <code>kubectl rollout undo</code> go back to?</b>
+    <p>The previous revision: the old ReplicaSet (kept at 0 replicas) is scaled back up. <code>--to-revision=N</code> picks a specific one from <code>rollout history</code>.</p></div></div>
+  <div class="q"><span class="qn">8</span><div><b>Your Pod is in <code>CrashLoopBackOff</code>. What are your first two commands?</b>
+    <p><code>kubectl describe pod NAME</code> (Events, exit code, restart count), then <code>kubectl logs NAME --previous</code> (output of the run that crashed).</p></div></div>
+  <div class="q"><span class="qn">9</span><div><b>Why does the Dockerfile install dependencies before copying <code>src/</code>?</b>
+    <p>Layer caching: Docker re-runs every step after the first one whose inputs changed. Dependencies change rarely, code changes often, so a code edit reuses the cached dependency layer and the rebuild is fast.</p></div></div>
+  <div class="q"><span class="qn">10</span><div><b>Why does it matter that pinger exits 1 on failure when it runs as a Job?</b>
+    <p>The exit code is all Kubernetes sees. Exit 1 makes the Job retry and finally go <b>Failed</b>, which monitoring can alert on. If pinger always exited 0, failures would be invisible.</p></div></div>
+</div>
+
+</section>
+
+</body>
+</html>

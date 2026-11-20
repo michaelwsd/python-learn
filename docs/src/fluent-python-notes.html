@@ -3,7 +3,8 @@
   Source for docs/fluent-python-notes.pdf. To rebuild after editing, from the repo root:
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
     --no-pdf-header-footer --print-to-pdf=docs/fluent-python-notes.pdf docs/src/fluent-python-notes.html
-  To add a chapter: add a .ci line to the contents, then copy a <section class="ch"> block.
+  To add a chapter: add an <a class="ci" href="#chN"> line to the contents, then copy a
+  <section id="chN" class="ch chN"> block (the href and id must match: that makes the link).
   Each section (an h3 and its content) sits in a <div class="sec">, which is never split across
   pages. Spacing comes from the .sec CSS rules, not inline margins.
 -->
@@ -51,6 +52,7 @@
   .contents { display: grid; gap: 8px; margin-top: 22px; }
   .contents::before { content: "Contents"; font-size: 8pt; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
   .ci { display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  a.ci { color: inherit; text-decoration: none; }
   .ci b { display: block; font-size: 11pt; margin-bottom: 2px; }
   .ci span:not(.cn) { color: var(--muted); font-size: 9pt; }
   .cn { width: 28px; height: 28px; border-radius: 6px; color: #fff; background: var(--py); font-weight: 700; display: grid; place-items: center; font-size: 11pt; }
@@ -154,18 +156,18 @@
     <div class="sub">My notes, chapter by chapter, with runnable examples</div>
   </div>
   <nav class="contents">
-    <div class="ci"><span class="cn">1</span><div><b>The Python Data Model</b><span>What the data model is · why <code>len()</code> is fast · <code>__repr__</code> vs <code>__str__</code> · truthiness · the Collection API · common special methods</span></div></div>
-    <div class="ci"><span class="cn">2</span><div><b>An Array of Sequences</b><span>Container vs Flat · Mutable vs Immutable · genexps and the walrus · tuples · <code>match</code>/<code>case</code> · slicing · list alternatives · threads, the GIL and asyncio</span></div></div>
-    <div class="ci"><span class="cn">3</span><div><b>Dictionaries and Sets</b><span>Dict comprehensions · <code>**</code> and <code>|</code> · mapping patterns · Mapping ABCs · hashability · <code>UserDict</code> · <code>__missing__</code> and <code>defaultdict</code> · variations of dict · <code>MappingProxyType</code> · how dict works · set theory · set operations</span></div></div>
-    <div class="ci"><span class="cn">6</span><div><b>Object References, Mutability, and Recycling</b><span>Variables as labels · assignment runs right to left · <code>is</code> vs <code>==</code> · relative immutability of tuples · shallow vs deep copies · mutable defaults · defensive copying · del and garbage collection</span></div></div>
-    <div class="ci"><span class="cn">7</span><div><b>Functions as First-Class Objects</b><span>Functions as objects · higher-order functions · <code>map</code>, <code>filter</code>, <code>reduce</code> · lazy iterators · callables and <code>__call__</code> · parameter kinds · <code>operator</code> · <code>partial</code></span></div></div>
-    <div class="ci"><span class="cn">8</span><div><b>Type Hints in Functions</b><span>Gradual typing · duck vs nominal typing · what mypy does</span></div></div>
-    <div class="ci"><span class="cn">14</span><div><b>Inheritance: For Better or for Worse</b><span><code>super()</code> · the MRO · mixins · aggregate classes · composition · <code>@final</code></span></div></div>
+    <a class="ci" href="#ch1"><span class="cn">1</span><div><b>The Python Data Model</b><span>What the data model is · why <code>len()</code> is fast · <code>__repr__</code> vs <code>__str__</code> · truthiness · the Collection API · common special methods</span></div></a>
+    <a class="ci" href="#ch2"><span class="cn">2</span><div><b>An Array of Sequences</b><span>Container vs Flat · Mutable vs Immutable · genexps and the walrus · tuples · <code>match</code>/<code>case</code> · slicing · list alternatives · threads, the GIL and asyncio</span></div></a>
+    <a class="ci" href="#ch3"><span class="cn">3</span><div><b>Dictionaries and Sets</b><span>Dict comprehensions · <code>**</code> and <code>|</code> · mapping patterns · Mapping ABCs · hashability · <code>UserDict</code> · <code>__missing__</code> and <code>defaultdict</code> · variations of dict · <code>MappingProxyType</code> · how dict works · set theory · set operations</span></div></a>
+    <a class="ci" href="#ch6"><span class="cn">6</span><div><b>Object References, Mutability, and Recycling</b><span>Variables as labels · assignment runs right to left · <code>is</code> vs <code>==</code> · relative immutability of tuples · shallow vs deep copies · mutable defaults · defensive copying · del and garbage collection</span></div></a>
+    <a class="ci" href="#ch7"><span class="cn">7</span><div><b>Functions as First-Class Objects</b><span>Functions as objects · higher-order functions · <code>map</code>, <code>filter</code>, <code>reduce</code> · lazy iterators · callables and <code>__call__</code> · parameter kinds · <code>operator</code> · <code>partial</code></span></div></a>
+    <a class="ci" href="#ch8"><span class="cn">8</span><div><b>Type Hints in Functions</b><span>Gradual typing · duck vs nominal typing · what mypy does</span></div></a>
+    <a class="ci" href="#ch14"><span class="cn">14</span><div><b>Inheritance: For Better or for Worse</b><span><code>super()</code> · the MRO · mixins · aggregate classes · composition · <code>@final</code></span></div></a>
   </nav>
 </header>
 
 <!-- ======================= CHAPTER 1 ======================= -->
-<section class="ch">
+<section id="ch1" class="ch">
 <div class="sec" style="zoom:1.14">
 <h2><span class="n">1</span>The Python Data Model</h2>
 <p class="meta">Book pages 3-20 · code in <code>fluent-python/ch01/</code></p>
@@ -377,7 +379,7 @@ abstract method '__getitem__'</pre>
 </section>
 
 <!-- ======================= CHAPTER 2 ======================= -->
-<section class="ch ch2">
+<section id="ch2" class="ch ch2">
 <div class="sec" style="zoom:1.12">
 <h2><span class="n">2</span>An Array of Sequences</h2>
 <p class="meta">Book pages 21-76 · code in <code>fluent-python/ch02/</code></p>
@@ -588,7 +590,7 @@ T4    █···· waiting ····
 </section>
 
 <!-- ======================= CHAPTER 3 ======================= -->
-<section class="ch ch3">
+<section id="ch3" class="ch ch3">
 <div class="sec" style="zoom:1.18">
 <h2><span class="n">3</span>Dictionaries and Sets</h2>
 <p class="meta">Book pages 77-114 · code in <code>fluent-python/ch03/</code></p>
@@ -856,7 +858,7 @@ d1.keys() - d2.keys()  <span class="c"># {'a'}</span>
 
 
 <!-- ======================= CHAPTER 6 ======================= -->
-<section class="ch ch6">
+<section id="ch6" class="ch ch6">
 <div class="sec" style="zoom:1.12">
 <h2><span class="n">6</span>Object References, Mutability, and Recycling</h2>
 <p class="meta">Book pages 201-230 · code in <code>fluent-python/ch06/</code></p>
@@ -985,7 +987,7 @@ gc.collect() <span class="c"># ...gc frees them</span></pre></div>
 
 
 <!-- ======================= CHAPTER 7 ======================= -->
-<section class="ch ch7">
+<section id="ch7" class="ch ch7">
 <div class="sec">
 <h2><span class="n">7</span>Functions as First-Class Objects</h2>
 <p class="meta">Book pages 231-252 · code in <code>fluent-python/ch07/</code></p>
@@ -1139,7 +1141,7 @@ picture(src='wumpus.jpeg')
 </section>
 
 <!-- ======================= CHAPTER 8 ======================= -->
-<section class="ch ch8">
+<section id="ch8" class="ch ch8">
 <div class="sec">
 <h2><span class="n">8</span>Type Hints in Functions</h2>
 <p class="meta">Book pages 253-302 · code in <code>fluent-python/ch08/</code></p>
@@ -1409,7 +1411,7 @@ def qty(s: str) -> int:
 </section>
 
 <!-- ======================= CHAPTER 14 ======================= -->
-<section class="ch ch14">
+<section id="ch14" class="ch ch14">
 <div class="sec" style="zoom:1.18">
 <h2><span class="n">14</span>Inheritance: For Better or for Worse</h2>
 <p class="meta">Book pages 487-518 · code in <code>fluent-python/ch14/</code></p>
