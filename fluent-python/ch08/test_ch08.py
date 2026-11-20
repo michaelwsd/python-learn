@@ -26,9 +26,19 @@ HERE = Path(__file__).parent
 def mypy_errors():
     """Run mypy --strict once; return its error lines as (file, line, message)."""
     result = subprocess.run(
-        [sys.executable, "-m", "mypy", "--strict", "--no-error-summary",
-         "exercises_ch08.py", "typecheck_ch08.py"],
-        cwd=HERE, capture_output=True, text=True, check=False,
+        [
+            sys.executable,
+            "-m",
+            "mypy",
+            "--strict",
+            "--no-error-summary",
+            "exercises_ch08.py",
+            "typecheck_ch08.py",
+        ],
+        cwd=HERE,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     errors = []
     for line in result.stdout.splitlines():
@@ -44,7 +54,11 @@ def errors_in(mypy_errors, *objs):
     for obj in objs:
         lines, start = inspect.getsourcelines(obj)
         file = Path(inspect.getsourcefile(obj)).name
-        found += [msg for f, n, msg in mypy_errors if f == file and start <= n < start + len(lines)]
+        found += [
+            msg
+            for f, n, msg in mypy_errors
+            if f == file and start <= n < start + len(lines)
+        ]
     return found
 
 
@@ -126,7 +140,10 @@ def test_best_symbol_hints(mypy_errors):
 def test_make_url():
     assert make_url("https://x.com") == "https://x.com"
     assert make_url("https://x.com", "api", "v1") == "https://x.com/api/v1"
-    assert make_url("https://x.com", "q", page="2", sort="asc") == "https://x.com/q?page=2&sort=asc"
+    assert (
+        make_url("https://x.com", "q", page="2", sort="asc")
+        == "https://x.com/q?page=2&sort=asc"
+    )
 
 
 def test_make_url_base_is_positional_only():

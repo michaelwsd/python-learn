@@ -15,7 +15,7 @@ from collections import deque
 # skus(["black", "white"], ["S", "M"]) -> ["black-S", "black-M", "white-S", "white-M"]
 # Use ONE list comprehension with two `for` clauses.
 def skus(colors, sizes):
-    return [f'{color}-{size}' for color in colors for size in sizes]
+    return [f"{color}-{size}" for color in colors for size in sizes]
 
 
 # total_length(["ab", "cde"]) -> 5
@@ -32,7 +32,7 @@ def total_length(words):
 # split_ends(range(5))    -> (0, [1, 2, 3], 4)
 # One unpacking assignment, no indexing or slicing.
 def split_ends(seq):
-    first, *middle, last = seq 
+    first, *middle, last = seq
     return first, middle, last
 
 
@@ -84,8 +84,14 @@ SIDE = slice(6, 11)
 QTY = slice(12, 17)
 PRICE = slice(18, None)
 
+
 def parse_trade(line):
-    return (line[SYMBOL].strip(), line[SIDE].strip(), int(line[QTY]), float(line[PRICE]))
+    return (
+        line[SYMBOL].strip(),
+        line[SIDE].strip(),
+        int(line[QTY]),
+        float(line[PRICE]),
+    )
 
 
 # Exercise 5: building a grid without the * trap
@@ -111,5 +117,6 @@ def top_n(words, n):
 # `lines` may be a huge generator, so don't build a full list of it:
 # keep only n lines in memory at any time (hint: deque has a maxlen).
 def tail(lines, n):
-    from collections import deque 
+    from collections import deque
+
     return list(deque(lines, maxlen=n))

@@ -92,7 +92,8 @@ def doubled(nums):
 # None (the convention for functions that change their argument, like
 # list.sort). The caller's list object must be the one that changes.
 def double_in_place(nums):
-    for i in range(len(nums)): nums[i] *= 2
+    for i in range(len(nums)):
+        nums[i] *= 2
     return None
 
 
@@ -104,11 +105,12 @@ def double_in_place(nums):
 #   raise KeyError(key) if the key is missing and NO default was passed
 # None can't mark "no default given", because None is a valid default.
 # Create a module-level sentinel with object() and test it with `is`.
-_MISSING = object()       # a brand-new, unique object, equal to nothing else
+_MISSING = object()  # a brand-new, unique object, equal to nothing else
+
 
 def get_setting(settings, key, default=_MISSING):
     if key in settings:
-        return settings[key]          # key exists: return its value, even if None
-    if default is _MISSING:           # was the default left out?
+        return settings[key]  # key exists: return its value, even if None
+    if default is _MISSING:  # was the default left out?
         raise KeyError(key)
-    return default                    # a default was given (possibly None)
+    return default  # a default was given (possibly None)

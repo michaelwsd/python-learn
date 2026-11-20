@@ -86,7 +86,7 @@ class StrKeyDict(UserDict):
         return str(key) in self.data
 
     def __setitem__(self, key, item):
-        self.data[str(key)] = item 
+        self.data[str(key)] = item
 
 
 # Exercise 6: hashability and de-duplication
@@ -96,8 +96,8 @@ def is_hashable(obj):
     try:
         hash(obj)
     except TypeError:
-        return False 
-    return True 
+        return False
+    return True
 
 
 # dedupe(["b", "a", "b", "c", "a"]) -> ["b", "a", "c"]   (first-seen order kept)
@@ -111,12 +111,7 @@ def dedupe(items):
 # compare(a, b) -> {"both": ..., "only_a": ..., "only_b": ..., "either": ...}
 # Each value is a set. Use &, -, | (no loops).
 def compare(a, b):
-    return {
-        "both": a & b,
-        "only_a": a - b,
-        "only_b": b - a,
-        "either": a | b
-    }
+    return {"both": a & b, "only_a": a - b, "only_b": b - a, "either": a | b}
 
 
 # missing_fields({"symbol": "AAPL", "qty": 1}, {"symbol", "qty", "price"}) -> {"price"}
@@ -131,4 +126,5 @@ def missing_fields(record, required):
 # later changes made to d. Hint: types.MappingProxyType.
 def read_only(d):
     from types import MappingProxyType
+
     return MappingProxyType(d)

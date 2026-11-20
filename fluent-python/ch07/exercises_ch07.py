@@ -25,7 +25,9 @@ def apply_twice(f, x):
 def compose(f, g):
     def h(x):
         return f(g(x))
+
     return h
+
 
 # Exercise 2: key functions
 # ---------------------------------------------------------------------------
@@ -53,7 +55,7 @@ def product(nums):
 #   sq(3) -> 9;  sq(4) -> 16;  sq.calls -> 2;  callable(sq) -> True
 class CallCounter:
     def __init__(self, func):
-        self.func = func 
+        self.func = func
         self.calls = 0
 
     def __call__(self, *args, **kwargs):
@@ -70,12 +72,7 @@ class CallCounter:
 #   connect("db")            -> TypeError
 # Write the signature yourself.
 def connect(host, port=5432, *, timeout, retries=3):
-    return {
-        "host": host,
-        "port": port,
-        "timeout": timeout,
-        "retries": retries
-    }
+    return {"host": host, "port": port, "timeout": timeout, "retries": retries}
 
 
 # Exercise 6: positional-only parameters

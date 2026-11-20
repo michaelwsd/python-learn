@@ -16,13 +16,25 @@ section("dict comprehensions (Example 3-1)")
 dial_codes = [(880, "Bangladesh"), (55, "Brazil"), (86, "China"), (91, "India")]
 country_dial = {country: code for code, country in dial_codes}
 print(country_dial)
-print({code: country.upper() for country, code in sorted(country_dial.items()) if code < 70})
+print(
+    {
+        code: country.upper()
+        for country, code in sorted(country_dial.items())
+        if code < 70
+    }
+)
 
 section("Unpacking and merging mappings")
+
+
 def dump(**kwargs):
     return kwargs
+
+
 print(dump(**{"x": 1}, y=2, **{"z": 3}))  # ** in a call
-print({"a": 0, **{"x": 1}, "y": 2, **{"z": 3, "x": 4}})  # ** in a literal: later keys win
+print(
+    {"a": 0, **{"x": 1}, "y": 2, **{"z": 3, "x": 4}}
+)  # ** in a literal: later keys win
 d1 = {"a": 1, "b": 3}
 d2 = {"a": 2, "b": 4, "c": 6}
 print("d1 | d2 =", d1 | d2)  # new dict; right side wins
@@ -30,6 +42,8 @@ d1 |= d2  # update d1 in place
 print("d1 after |= :", d1)
 
 section("Pattern matching with mappings (Example 3-2)")
+
+
 def get_creators(record):
     match record:
         case {"type": "book", "api": 2, "authors": [*names]}:
@@ -42,6 +56,7 @@ def get_creators(record):
             return [name]
         case _:
             raise ValueError(f"Invalid record: {record!r}")
+
 
 b1 = dict(api=1, author="Douglas Hofstadter", type="book", title="Godel, Escher, Bach")
 print(get_creators(b1))  # extra keys (title) are fine: partial match
@@ -71,9 +86,13 @@ index = defaultdict(list)  # list is the default_factory, called with no argumen
 for position, word in enumerate(text.split()):
     index[word].append(position)
 print(dict(index))
-print("index.get('cat'):", index.get("cat"), "| 'cat' in index:", "cat" in index)  # only [] triggers it
+print(
+    "index.get('cat'):", index.get("cat"), "| 'cat' in index:", "cat" in index
+)  # only [] triggers it
 
 section("__missing__ (Example 3-7, simplified)")
+
+
 class StrKeyDict0(dict):
     def __missing__(self, key):  # called by dict.__getitem__ when a key is absent
         if isinstance(key, str):
@@ -88,6 +107,7 @@ class StrKeyDict0(dict):
 
     def __contains__(self, key):
         return key in self.keys() or str(key) in self.keys()
+
 
 d = StrKeyDict0([("2", "two"), ("4", "four")])
 print(d[2], d["4"], d.get(1, "N/A"), 4 in d, 1 in d)
@@ -107,6 +127,8 @@ od.move_to_end("a")
 print(od, od.popitem(last=False))
 
 section("Subclass UserDict, not dict (Example 3-9)")
+
+
 class StrKeyDict(UserDict):  # stores items in self.data, a real dict
     def __missing__(self, key):
         if isinstance(key, str):
@@ -118,6 +140,7 @@ class StrKeyDict(UserDict):  # stores items in self.data, a real dict
 
     def __setitem__(self, key, item):
         self.data[str(key)] = item  # every write converts the key
+
 
 d = StrKeyDict([(2, "two")])
 d[4] = "four"

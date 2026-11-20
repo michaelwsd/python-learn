@@ -19,7 +19,9 @@ print(beyond_ascii, beyond_ascii == same_thing)  # listcomp reads better
 section("Cartesian product (Example 2-4)")
 colors = ["black", "white"]
 sizes = ["S", "M", "L"]
-tshirts = [(color, size) for color in colors for size in sizes]  # nested loops, same order
+tshirts = [
+    (color, size) for color in colors for size in sizes
+]  # nested loops, same order
 print(tshirts)
 
 section("Generator expressions (Example 2-5, 2-6)")

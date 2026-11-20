@@ -67,7 +67,9 @@ def display_wrong(temperature: int) -> None:
     print(hex(temperature))
 
 
-update(probe_ok, display_wrong)  # ERROR: display may receive a float, hex() needs an int
+update(
+    probe_ok, display_wrong
+)  # ERROR: display may receive a float, hex() needs an int
 
 
 class SupportsLessThan(Protocol):

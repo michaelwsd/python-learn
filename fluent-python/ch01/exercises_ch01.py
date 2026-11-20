@@ -79,10 +79,10 @@ class Temperature:
         self.celsius = celsius
 
     def __repr__(self):
-        return f'Temperature({self.celsius})'
+        return f"Temperature({self.celsius})"
 
     def __str__(self):
-        return f'{self.celsius}°C'
+        return f"{self.celsius}°C"
 
 
 # Exercise 4: truthiness without __bool__

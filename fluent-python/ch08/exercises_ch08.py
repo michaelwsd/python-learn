@@ -17,8 +17,16 @@ Write the hints yourself: add imports from typing / collections.abc as needed.
 # ---------------------------------------------------------------------------
 # show_count(count, singular, plural=None) -> "1 bird", "no birds", "3 mice"
 # plural may be a str or None; when it is None, use singular + "s".
-def show_count(count, singular, plural=None):
-    raise NotImplementedError
+def show_count(count: int, singular: str, plural: str | None = None) -> str:
+    if not plural:
+        plural = singular + "s"
+
+    if count == 0:
+        return "no " + plural
+    elif count == 1:
+        return f"1 {singular}"
+    else:
+        return f"{count} {plural}"
 
 
 # Exercise 2: be liberal in what you accept, conservative in what you return

@@ -45,6 +45,10 @@ if __name__ == "__main__":
     print("deck[:3]          ", deck[:3])  # slicing: list handles it
     print("deck[12::13]      ", deck[12::13])  # every ace
     print("choice(deck)      ", choice(deck))  # stdlib works on any sequence
-    print("Q hearts in deck  ", Card("Q", "hearts") in deck)  # no __contains__: scans via __getitem__
-    print("first 3 reversed  ", list(reversed(deck))[:3])  # reversed needs __len__ + __getitem__
+    print(
+        "Q hearts in deck  ", Card("Q", "hearts") in deck
+    )  # no __contains__: scans via __getitem__
+    print(
+        "first 3 reversed  ", list(reversed(deck))[:3]
+    )  # reversed needs __len__ + __getitem__
     print("lowest 3 sorted   ", sorted(deck, key=spades_high)[:3])

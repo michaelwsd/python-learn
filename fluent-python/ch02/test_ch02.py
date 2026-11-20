@@ -15,7 +15,12 @@ from exercises_ch02 import (
 
 # Exercise 1 ---------------------------------------------------------------
 def test_skus():
-    assert skus(["black", "white"], ["S", "M"]) == ["black-S", "black-M", "white-S", "white-M"]
+    assert skus(["black", "white"], ["S", "M"]) == [
+        "black-S",
+        "black-M",
+        "white-S",
+        "white-M",
+    ]
     assert skus([], ["S"]) == []
 
 

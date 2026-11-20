@@ -37,7 +37,14 @@ def test_compose():
 def test_rhyme_sort():
     assert rhyme_sort(["apple", "fig", "banana"]) == ["banana", "apple", "fig"]
     words = ["strawberry", "fig", "apple", "cherry", "raspberry", "banana"]
-    assert rhyme_sort(words) == ["banana", "apple", "fig", "raspberry", "strawberry", "cherry"]
+    assert rhyme_sort(words) == [
+        "banana",
+        "apple",
+        "fig",
+        "raspberry",
+        "strawberry",
+        "cherry",
+    ]
 
 
 # Exercise 3 ---------------------------------------------------------------
@@ -68,7 +75,12 @@ def test_call_counter_passes_all_arguments():
 
 # Exercise 5 ---------------------------------------------------------------
 def test_connect():
-    assert connect("db", timeout=5) == {"host": "db", "port": 5432, "timeout": 5, "retries": 3}
+    assert connect("db", timeout=5) == {
+        "host": "db",
+        "port": 5432,
+        "timeout": 5,
+        "retries": 3,
+    }
     assert connect("db", 6000, timeout=1, retries=0)["port"] == 6000
 
 
@@ -98,8 +110,16 @@ TRADES = [("MSFT", "BUY", 30), ("AAPL", "SELL", 10), ("AAPL", "BUY", 20)]
 
 
 def test_sort_by():
-    assert sort_by(TRADES, 0) == [("AAPL", "SELL", 10), ("AAPL", "BUY", 20), ("MSFT", "BUY", 30)]
-    assert sort_by(TRADES, 1, 2) == [("AAPL", "BUY", 20), ("MSFT", "BUY", 30), ("AAPL", "SELL", 10)]
+    assert sort_by(TRADES, 0) == [
+        ("AAPL", "SELL", 10),
+        ("AAPL", "BUY", 20),
+        ("MSFT", "BUY", 30),
+    ]
+    assert sort_by(TRADES, 1, 2) == [
+        ("AAPL", "BUY", 20),
+        ("MSFT", "BUY", 30),
+        ("AAPL", "SELL", 10),
+    ]
     assert sort_by(TRADES, 2)[0] == ("AAPL", "SELL", 10)
 
 

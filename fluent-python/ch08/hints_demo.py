@@ -26,7 +26,13 @@ def show_count(count: int, singular: str, plural: str | None = None) -> str:
     return f"{count_str} {plural}"
 
 
-print(show_count(99, "bird"), "|", show_count(1, "bird"), "|", show_count(3, "mouse", "mice"))
+print(
+    show_count(99, "bird"),
+    "|",
+    show_count(1, "bird"),
+    "|",
+    show_count(3, "mouse", "mice"),
+)
 print("hints are just stored:", show_count.__annotations__)
 print("no runtime check:", show_count("lots", "bird"))  # type: ignore[arg-type]  # mypy rejects, Python runs it
 
@@ -87,7 +93,22 @@ def columnize(sequence: Sequence[str], num_columns: int = 0) -> list[tuple[str, 
 
 
 print(tokenize("mad skilled noob"))
-print(columnize(["drake", "fawn", "heron", "ibex", "koala", "lynx", "tahr", "xerus", "yak", "zapus"]))
+print(
+    columnize(
+        [
+            "drake",
+            "fawn",
+            "heron",
+            "ibex",
+            "koala",
+            "lynx",
+            "tahr",
+            "xerus",
+            "yak",
+            "zapus",
+        ]
+    )
+)
 
 section("Iterable parameter, type alias (Example 8-15)")
 FromTo = tuple[str, str]

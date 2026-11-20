@@ -99,10 +99,10 @@
   .abc b { display: block; font-size: 9.4pt; }
   .abc i { font-family: Menlo, monospace; font-size: 8pt; }
   .abc small { display: block; color: var(--muted); font-size: 7.8pt; }
-  .ch2 h3, .ch3 h3, .ch6 h3, .ch7 h3 { margin: 8px 0 4px; }
-  .ch2 p, .ch3 p, .ch6 p, .ch7 p { margin: 3px 0; }
-  .ch2 .two, .ch3 .two, .ch6 .two, .ch7 .two { gap: 8px; }
-  .ch2 table, .ch3 table, .ch6 table, .ch7 table { margin: 4px 0; }
+  .ch2 h3, .ch3 h3, .ch6 h3, .ch7 h3, .ch8 h3 { margin: 8px 0 4px; }
+  .ch2 p, .ch3 p, .ch6 p, .ch7 p, .ch8 p { margin: 3px 0; }
+  .ch2 .two, .ch3 .two, .ch6 .two, .ch7 .two, .ch8 .two { gap: 8px; }
+  .ch2 table, .ch3 table, .ch6 table, .ch7 table, .ch8 table { margin: 4px 0; }
   .ch3 > *, .ch6 > *, .ch7 > * { margin-top: 0; margin-bottom: 0; }
   .ch3 > h3, .ch6 > h3, .ch7 > h3 { margin: 14px 0 6px; }
   .ch3 > .meta, .ch6 > .meta, .ch7 > .meta { margin-bottom: 8px; }
@@ -159,6 +159,7 @@
     <div class="ci"><span class="cn">3</span><div><b>Dictionaries and Sets</b><span>Dict comprehensions · <code>**</code> and <code>|</code> · mapping patterns · Mapping ABCs · hashability · <code>UserDict</code> · <code>__missing__</code> and <code>defaultdict</code> · variations of dict · <code>MappingProxyType</code> · how dict works · set theory · set operations</span></div></div>
     <div class="ci"><span class="cn">6</span><div><b>Object References, Mutability, and Recycling</b><span>Variables as labels · assignment runs right to left · <code>is</code> vs <code>==</code> · relative immutability of tuples · shallow vs deep copies · mutable defaults · defensive copying · del and garbage collection</span></div></div>
     <div class="ci"><span class="cn">7</span><div><b>Functions as First-Class Objects</b><span>Functions as objects · higher-order functions · <code>map</code>, <code>filter</code>, <code>reduce</code> · lazy iterators · callables and <code>__call__</code> · parameter kinds · <code>operator</code> · <code>partial</code></span></div></div>
+    <div class="ci"><span class="cn">8</span><div><b>Type Hints in Functions</b><span>Gradual typing · duck vs nominal typing · what mypy does</span></div></div>
   </nav>
 </header>
 
@@ -1132,6 +1133,276 @@ list(map(triple, [1, 2, 3]))  <span class="c"># [3, 6, 9]</span></pre><pre>tripl
 binary('1010')    <span class="c"># int('1010', base=2) → 10</span></pre><pre>picture = partial(tag, 'img', class_='pic-frame')
 picture(src='wumpus.jpeg')
 <span class="c"># tag('img', class_='pic-frame', src='wumpus.jpeg')</span></pre></div>
+</div>
+</div>
+</section>
+
+<!-- ======================= CHAPTER 8 ======================= -->
+<section class="ch ch8">
+<div class="sec">
+<h2><span class="n">8</span>Type Hints in Functions</h2>
+<p class="meta">Book pages 253-302 · code in <code>fluent-python/ch08/</code></p>
+<div class="lead"><b>Hints are notes for tools:</b> Python stores them but never checks them. A type checker such as mypy checks them, before the code runs.</div>
+
+<h3>Gradual Typing, Duck vs Nominal Typing and mypy</h3>
+<div class="two keep">
+<div><p><b>Gradual typing:</b> hints are <b>optional</b> and can be added one function at a time. Python keeps them in <code>__annotations__</code> but <b>never checks them at runtime</b>, and they don't make code faster.</p></div>
+<pre>def show_count(count: int, word: str) -> str: ...
+
+show_count.__annotations__
+<span class="c"># {'count': int, 'word': str, 'return': str}</span>
+show_count('lots', 'bird')   <span class="c"># runs: nothing checks hints</span></pre>
+</div>
+<div class="two keep">
+<div><p><b>mypy</b> is a <b>static type checker</b>: it reads your code <b>without running it</b> and reports calls and operations that don't match the hints.</p>
+<p>By default it <b>skips the body</b> of a function with no hints (treating everything there as <code>Any</code>). <code>--strict</code> requires hints everywhere and checks everything.</p></div>
+<div class="stack"><pre>$ mypy demo.py
+error: Argument 1 to "show_count" has
+  incompatible type "str"; expected "int"</pre><pre>def f(x): return 'a' + 1              <span class="c"># skipped: no hints</span>
+def g(x: int) -> int: return 'a' + 1  <span class="c"># error</span></pre></div>
+</div>
+<table class="keep">
+<thead><tr><th style="width:18%"></th><th>Duck typing</th><th>Nominal typing</th></tr></thead>
+<tbody>
+<tr><td><b>Used by</b></td><td>Python, at runtime</td><td>mypy, reading the hints</td></tr>
+<tr><td><b>What matters</b></td><td>what the object can <b>do</b>: if it can <code>.quack()</code>, it's a duck</td><td>the <b>declared</b> class: every operation is checked against it</td></tr>
+<tr><td><b>Errors found</b></td><td>only when the code runs</td><td>before running; may reject code that would work</td></tr>
+</tbody>
+</table>
+<div class="two keep" style="align-items:stretch">
+<pre><span class="c"># duck typing: Python checks when it runs</span>
+class Bird: ...
+class Duck(Bird):
+    def quack(self): print('Quack!')
+
+def alert(birdie):        <span class="c"># no hints</span>
+    birdie.quack()
+
+alert(Duck())   <span class="c"># Quack!</span>
+alert(Bird())   <span class="c"># AttributeError, only at runtime</span></pre>
+<pre><span class="c"># nominal typing: mypy checks before running</span>
+def alert_duck(birdie: Duck) -> None:
+    birdie.quack()
+
+def alert_bird(birdie: Bird) -> None:
+    birdie.quack()   <span class="c"># error: Bird has no quack()</span>
+
+alert_duck(Bird())   <span class="c"># error: a Bird is not a Duck</span>
+alert_bird(Duck())   <span class="c"># runs, but the body is flagged</span></pre>
+</div>
+</div>
+
+<div class="sec">
+<h3>Subtype-of vs Consistent-with</h3>
+<div class="two keep">
+<div><p><b>Subtype-of</b> is ordinary inheritance: a subclass can go wherever its parent is expected, <b>but not the reverse</b>.</p></div>
+<pre>class Bird: ...
+class Duck(Bird): ...
+
+def need_bird(b: Bird) -> None: ...
+def need_duck(d: Duck) -> None: ...
+
+need_bird(Duck())   <span class="c"># OK: a Duck is a Bird</span>
+need_duck(Bird())   <span class="c"># error: a Bird is not a Duck</span></pre>
+</div>
+<div class="two keep">
+<div><p><b>Consistent-with</b> is what mypy really checks: subtype-of, <b>plus two rules for <code>Any</code></b>:</p>
+<p>1. Every type fits where <code>Any</code> is expected.<br>2. <code>Any</code> fits where <b>every</b> type is expected.</p>
+<p>Rule 2 lets <code>Any</code> spread silently: code without hints returns <code>Any</code>, so mypy accepts it everywhere.</p></div>
+<div class="stack"><pre>def take_any(x: Any) -> None: ...
+
+take_any(42)     <span class="c"># OK: rule 1</span>
+take_any('hi')   <span class="c"># OK: rule 1</span></pre><pre>def f4():        <span class="c"># no hints: returns Any</span>
+    return 42
+
+n: int = f4()    <span class="c"># OK: rule 2</span>
+s: str = f4()    <span class="c"># also OK: rule 2, wrong!</span></pre></div>
+</div>
+<div class="two keep">
+<div><p>One practical extra: <code>int</code> is consistent-with <code>float</code> (and <code>float</code> with <code>complex</code>), though it isn't a subclass. So write <code>float</code> for "any number".</p></div>
+<pre>def half(x: float) -> float:
+    return x / 2
+
+half(3)   <span class="c"># OK: an int fits where a float is expected</span></pre>
+</div>
+</div>
+
+<div class="sec">
+<h3>Three Ways to Hint a Tuple</h3>
+<div class="two keep">
+<div><p><b>1. A record:</b> a fixed number of fields, one type per field. The <b>length is checked</b>.</p></div>
+<pre>def dist(p: tuple[float, float]) -> float: ...
+
+dist((3.0, 4.0))        <span class="c"># OK</span>
+dist((3.0, 4.0, 5.0))   <span class="c"># error: wrong length</span></pre>
+</div>
+<div class="two keep">
+<div><p><b>2. A named tuple:</b> a <code>NamedTuple</code> subclasses <code>tuple</code>, so it fits where the matching plain tuple is expected.</p></div>
+<pre>class Coordinate(NamedTuple):
+    lat: float
+    lon: float
+
+dist(Coordinate(3.0, 4.0))   <span class="c"># OK</span></pre>
+</div>
+<div class="two keep">
+<div><p><b>3. An immutable sequence:</b> any length, every item the same type: write the type, then <code>...</code>. A bare <code>tuple</code> means <code>tuple[Any, ...]</code>.</p></div>
+<pre>def total(nums: tuple[int, ...]) -> int: ...
+
+total(())          <span class="c"># OK: any length</span>
+total((1, 2, 3))   <span class="c"># OK</span>
+total((1, '2'))    <span class="c"># error: '2' is not an int</span></pre>
+</div>
+</div>
+
+<div class="sec">
+<h3>Accept Abstract Types, Return Concrete Types</h3>
+<div class="two keep">
+<div><p><b>"Be liberal in what you accept, conservative in what you send."</b> Hint <b>parameters</b> with a general ABC from <code>collections.abc</code>, so callers can pass many kinds of objects.</p>
+<p>A <code>dict</code> hint rejects other mappings the function would handle fine.</p></div>
+<div class="stack"><pre>def name2hex(name: str, m: dict[str, int]) -> str:
+    return f'{m[name]:06x}'
+
+name2hex('red', OrderedDict(c))       <span class="c"># OK: a dict</span>
+name2hex('red', MappingProxyType(c))  <span class="c"># error</span></pre><pre>def name2hex(name: str, m: Mapping[str, int]) -> str:
+    return f'{m[name]:06x}'
+
+name2hex('red', MappingProxyType(c))  <span class="c"># OK</span></pre></div>
+</div>
+<div class="two keep">
+<div><p>Hint <b>return values</b> with a <b>concrete</b> type, so callers know exactly what they get. Returning <code>Sequence[str]</code> here would forbid <code>.append()</code> on what is really a list.</p></div>
+<pre>def tokenize(text: str) -> list[str]:
+    return text.upper().split()
+
+tokenize('a b').append('C')   <span class="c"># OK: it's a list</span></pre>
+</div>
+<table class="keep">
+<thead><tr><th style="width:30%">The function...</th><th>Mappings</th><th>Sequences</th></tr></thead>
+<tbody>
+<tr><td>only loops over it once</td><td colspan="2"><code>Iterable[T]</code> (lists, tuples, sets, generators, files...)</td></tr>
+<tr><td>only reads it</td><td><code>Mapping[K, V]</code></td><td><code>Sequence[T]</code></td></tr>
+<tr><td>also changes it</td><td><code>MutableMapping[K, V]</code></td><td><code>MutableSequence[T]</code></td></tr>
+<tr><td>needs the exact type</td><td><code>dict[K, V]</code></td><td><code>list[T]</code></td></tr>
+<tr><td>returns it</td><td><code>dict[K, V]</code></td><td><code>list[T]</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="sec">
+<h3><code>Iterable</code> vs <code>Sequence</code></h3>
+<div class="two keep">
+<div><p><code>Iterable</code> is the most liberal parameter type: if the function just loops once, anything iterable works, <b>generators included</b>.</p></div>
+<pre>def zip_replace(
+    text: str, changes: Iterable[tuple[str, str]]
+) -> str:
+    for old, new in changes:
+        text = text.replace(old, new)
+    return text
+
+pairs = [('e', '3'), ('o', '0')]
+zip_replace('noob', pairs)               <span class="c"># 'n00b'</span>
+zip_replace('leet', (p for p in pairs))  <span class="c"># OK too</span></pre>
+</div>
+<div class="two keep">
+<div><p>But <code>Iterable</code> <b>only</b> promises looping. Use <code>Sequence</code> when you need <code>len()</code>, indexing or slicing, or <b>more than one pass</b> (a generator is used up after one loop).</p></div>
+<pre>def count(items: Iterable[str]) -> int:
+    return len(items)
+<span class="c"># error: Argument 1 to "len" has incompatible</span>
+<span class="c">#   type "Iterable[str]"; expected "Sized"</span>
+
+def count(items: Sequence[str]) -> int:
+    return len(items)   <span class="c"># OK</span></pre>
+</div>
+</div>
+
+<div class="sec">
+<h3>Generic Functions with <code>TypeVar</code></h3>
+<div class="two keep">
+<div><p>A <code>TypeVar</code> is a <b>generic type</b>: mypy infers it from the arguments at each call, so it knows <b>what comes out</b>, and therefore which <b>methods the result has</b> (a <code>str</code> result allows <code>.upper()</code>). With <code>Any</code>, that is lost.</p>
+<p>Python 3.12+ can write <code>def sample[T](...)</code> instead of the <code>TypeVar</code> line.</p></div>
+<pre>T = TypeVar('T')
+
+def sample(pop: Sequence[T], n: int) -> list[T]: ...
+
+sample([1, 2, 3], 2)   <span class="c"># list[int]: T = int</span>
+sample('abc', 2)       <span class="c"># list[str]: T = str</span></pre>
+</div>
+<div class="two keep">
+<div><p><b>Restricted:</b> <code>T</code> must be <b>exactly one of</b> the listed types.</p></div>
+<pre>NumberT = TypeVar('NumberT', float, Decimal, Fraction)
+
+def mode(data: Iterable[NumberT]) -> NumberT: ...
+
+mode([Fraction(1, 2)])   <span class="c"># Fraction</span>
+mode(['a', 'a'])         <span class="c"># error: cannot be "str"</span></pre>
+</div>
+<div class="two keep">
+<div><p><b>Bounded:</b> <code>bound=Hashable</code> limits what <code>T</code> can be filled with: <b>any hashable type</b> (<code>str</code>, <code>tuple</code>, your own classes), but <b>not</b> an unhashable one like <code>list</code>.</p></div>
+<pre>HashableT = TypeVar('HashableT', bound=Hashable)
+
+def mode(data: Iterable[HashableT]) -> HashableT: ...
+
+mode(['buy', 'sell', 'buy'])  <span class="c"># OK: str, hashable</span>
+mode([(1, 2), (1, 2)])        <span class="c"># OK: tuple, hashable</span>
+mode([[1], [1]])              <span class="c"># error: list, unhashable</span></pre>
+</div>
+</div>
+
+<div class="sec">
+<h3>Static Duck Typing with <code>Protocol</code></h3>
+<div class="two keep">
+<div><p>A <code>Protocol</code> lists the <b>methods a type must have</b>. mypy accepts <b>any class that has them</b>, with no inheritance needed: duck typing, but checked before the code runs.</p>
+<p>mypy doesn't ask "is <code>Dog</code> a subclass of <code>Speaker</code>?" but "does <code>Dog</code> have <code>speak() -&gt; str</code>?"</p></div>
+<pre>class Speaker(Protocol):
+    def speak(self) -> str: ...   <span class="c"># just a description</span>
+
+class Dog:                        <span class="c"># no Speaker base</span>
+    def speak(self) -> str: return 'woof'
+class Rock: ...
+
+def greet(s: Speaker) -> str:
+    return s.speak()
+
+greet(Dog())    <span class="c"># OK: Dog has speak()</span>
+greet(Rock())   <span class="c"># error: Rock is not a Speaker</span></pre>
+</div>
+<div class="two keep">
+<div><p><b>Use it when</b> a function only needs <b>certain methods</b>, and the types that have them share no base class, or are classes you didn't write (built-ins, libraries).</p>
+<p>To also <b>return the caller's type</b>, use the Protocol as a <code>TypeVar</code> bound. Here <code>top</code> needs <code>&lt;</code> to sort, so it accepts anything with <code>__lt__</code>.</p></div>
+<pre>class SupportsLessThan(Protocol):
+    def __lt__(self, other: Any) -> bool: ...
+
+LT = TypeVar('LT', bound=SupportsLessThan)
+
+def top(series: Iterable[LT], n: int) -> list[LT]:
+    return sorted(series, reverse=True)[:n]
+
+top([4, 1, 5], 2)        <span class="c"># [5, 4]: list[int]</span>
+top([Price(1)], 1)       <span class="c"># OK: Price only defines __lt__</span>
+top([object()], 1)       <span class="c"># error: object has no &lt;</span></pre>
+</div>
+</div>
+
+<div class="sec">
+<h3><code>Callable</code> and <code>NoReturn</code></h3>
+<div class="two keep">
+<div><p><code>Callable[[A, B], R]</code> hints a function passed as an argument: it takes <code>A, B</code> and returns <code>R</code>. <code>Callable[..., R]</code> means any arguments.</p>
+<p>The passed function may <b>return</b> something narrower (<code>int</code> for <code>float</code>), but must <b>accept</b> everything the caller may send: a wider parameter type is fine, a narrower one is not.</p></div>
+<pre>def update(display: Callable[[float], None]) -> None:
+    display(23.5)
+
+def show(t: complex) -> None: ...
+def show_hex(t: int) -> None: print(hex(t))
+update(show)       <span class="c"># OK: accepts every float</span>
+update(show_hex)   <span class="c"># error: hex(23.5) would fail</span></pre>
+</div>
+<div class="two keep">
+<div><p><code>-&gt; NoReturn</code>: the function <b>never returns</b> (always raises or exits), unlike <code>-&gt; None</code>, which returns without a value. It tells mypy the code stops at that call.</p></div>
+<pre>def fail(msg: str) -> NoReturn:
+    raise ValueError(msg)
+
+def qty(s: str) -> int:
+    if s.isdigit(): return int(s)
+    fail(s)   <span class="c"># OK; with -> None: "Missing return"</span></pre>
 </div>
 </div>
 </section>

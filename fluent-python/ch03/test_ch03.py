@@ -16,14 +16,21 @@ from exercises_ch03 import (
 
 # Exercise 1 ---------------------------------------------------------------
 def test_invert():
-    assert invert({"AAPL": "Apple", "MSFT": "Microsoft"}) == {"Apple": "AAPL", "Microsoft": "MSFT"}
+    assert invert({"AAPL": "Apple", "MSFT": "Microsoft"}) == {
+        "Apple": "AAPL",
+        "Microsoft": "MSFT",
+    }
     assert invert({}) == {}
 
 
 def test_merge_config_new_dict_overrides_win():
     defaults = {"timeout": 30, "retries": 3}
     overrides = {"timeout": 5, "debug": True}
-    assert merge_config(defaults, overrides) == {"timeout": 5, "retries": 3, "debug": True}
+    assert merge_config(defaults, overrides) == {
+        "timeout": 5,
+        "retries": 3,
+        "debug": True,
+    }
     assert defaults == {"timeout": 30, "retries": 3}
     assert overrides == {"timeout": 5, "debug": True}
 
@@ -31,8 +38,13 @@ def test_merge_config_new_dict_overrides_win():
 # Exercise 2 ---------------------------------------------------------------
 def test_describe_trade():
     assert describe({"type": "trade", "symbol": "AAPL", "qty": 100}) == "trade 100 AAPL"
-    assert describe({"type": "trade", "symbol": "AAPL", "qty": 100, "venue": "X"}) == "trade 100 AAPL"
-    assert describe({"type": "trade", "symbol": "AAPL", "qty": "100"}) == "unknown event"
+    assert (
+        describe({"type": "trade", "symbol": "AAPL", "qty": 100, "venue": "X"})
+        == "trade 100 AAPL"
+    )
+    assert (
+        describe({"type": "trade", "symbol": "AAPL", "qty": "100"}) == "unknown event"
+    )
 
 
 def test_describe_error_counts_extra_fields():
@@ -108,7 +120,10 @@ def test_compare():
 def test_missing_fields():
     required = {"symbol", "qty", "price"}
     assert missing_fields({"symbol": "AAPL", "qty": 1}, required) == {"price"}
-    assert missing_fields({"symbol": "A", "qty": 1, "price": 2.0, "x": 0}, required) == set()
+    assert (
+        missing_fields({"symbol": "A", "qty": 1, "price": 2.0, "x": 0}, required)
+        == set()
+    )
 
 
 # Exercise 8 ---------------------------------------------------------------
