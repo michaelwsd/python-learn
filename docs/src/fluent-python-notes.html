@@ -136,7 +136,7 @@
     <div class="ci"><span class="cn">2</span><div><b>An Array of Sequences</b><span>Container vs Flat · Mutable vs Immutable · genexps and the walrus · tuples · <code>match</code>/<code>case</code> · slicing · list alternatives · threads, the GIL and asyncio</span></div></div>
     <div class="ci"><span class="cn">3</span><div><b>Dictionaries and Sets</b><span>Dict comprehensions · <code>**</code> and <code>|</code> · mapping patterns · Mapping ABCs · hashability · <code>UserDict</code> · <code>__missing__</code> and <code>defaultdict</code> · variations of dict · <code>MappingProxyType</code> · how dict works · set theory · set operations</span></div></div>
     <div class="ci"><span class="cn">6</span><div><b>Object References, Mutability, and Recycling</b><span>Variables as labels · assignment runs right to left · <code>is</code> vs <code>==</code> · relative immutability of tuples · shallow vs deep copies · mutable defaults · defensive copying · del and garbage collection</span></div></div>
-    <div class="ci"><span class="cn">7</span><div><b>Functions as First-Class Objects</b><span>Functions as objects · higher-order functions · <code>map</code>, <code>filter</code>, <code>reduce</code> · lazy iterators · callables and <code>__call__</code> · parameter kinds</span></div></div>
+    <div class="ci"><span class="cn">7</span><div><b>Functions as First-Class Objects</b><span>Functions as objects · higher-order functions · <code>map</code>, <code>filter</code>, <code>reduce</code> · lazy iterators · callables and <code>__call__</code> · parameter kinds · <code>operator</code> · <code>partial</code></span></div></div>
   </nav>
 </header>
 
@@ -1037,6 +1037,39 @@ order('pizza', 2, 'cheese', True)  <span class="c"># True goes into extras: gift
 <div class="stack"><pre>def f(a, *args, b): ...
 f(1, 2, 3, b=4)   <span class="c"># args=(2, 3)</span></pre><pre>def g(a, *, b): ...
 g(1, 2, b=4)      <span class="c"># TypeError</span></pre></div>
+</div>
+
+<h3 style="margin-top:24px">Functional programming: <code>operator</code> and <code>functools.partial</code></h3>
+<p class="keep" style="margin-bottom:6px">In a <b>functional</b> style you build programs by passing functions to other functions. These two modules supply ready-made small functions, so you rarely need to write a <code>lambda</code>.</p>
+<div class="two keep">
+<p><code>operator</code> gives a <b>function for each operator</b>: <code>add</code>, <code>mul</code>, <code>eq</code>, <code>getitem</code>... Operators like <code>*</code> are syntax, so they can't be passed; <code>mul</code> can.</p>
+<pre>reduce(lambda a, b: a * b, range(1, 6))  <span class="c"># 120</span>
+reduce(mul, range(1, 6))                 <span class="c"># 120</span></pre>
+</div>
+<div class="two keep" style="margin-top:6px">
+<p><b>Function factories:</b> <code>itemgetter</code>, <code>attrgetter</code> and <code>methodcaller</code> <b>build a function</b> for <code>obj[k]</code>, <code>obj.attr</code> and <code>obj.method(...)</code>. Several names return a <b>tuple</b>, good for multi-key sorting. <code>itemgetter</code> works on anything with <code>__getitem__</code> (dicts too); <code>attrgetter</code> accepts dotted paths.</p>
+<div class="stack"><pre>sorted(data, key=itemgetter(1))    <span class="c"># by item 1</span>
+itemgetter(1, 0)(('Tokyo', 'JP'))  <span class="c"># ('JP', 'Tokyo')</span></pre><pre>sorted(cities, key=attrgetter('coord.lat'))</pre><pre>hyphenate = methodcaller('replace', ' ', '-')
+hyphenate('the time')              <span class="c"># 'the-time'</span></pre></div>
+</div>
+<table class="keep" style="margin-top:6px">
+<tr><th>Instead of</th><th>Write</th><th>Instead of</th><th>Write</th></tr>
+<tr><td><code>lambda a, b: a * b</code></td><td><code>mul</code></td><td><code>lambda x: x.coord.lat</code></td><td><code>attrgetter('coord.lat')</code></td></tr>
+<tr><td><code>lambda x: (x[0], x[2])</code></td><td><code>itemgetter(0, 2)</code></td><td><code>lambda s: s.replace(' ', '-')</code></td><td><code>methodcaller('replace', ' ', '-')</code></td></tr>
+</table>
+<div class="two keep" style="margin-top:6px">
+<div><p><b><code>partial(func, *args, **kwargs)</code></b> makes a <b>new callable</b> with some arguments <b>already filled in</b>. It doesn't call <code>func</code> yet; it only stores <code>func</code> and the saved arguments.</p>
+<p>When called, the <b>saved arguments go in front</b> of the new ones: <code>triple(7)</code> runs <code>mul(3, 7)</code>. Use it to adapt a function to an API that passes fewer arguments, like <code>map</code>.</p></div>
+<div class="stack"><pre>triple = partial(mul, 3)      <span class="c"># lambda x: mul(3, x)</span>
+triple(7)                     <span class="c"># mul(3, 7) → 21</span>
+list(map(triple, [1, 2, 3]))  <span class="c"># [3, 6, 9]</span></pre><pre>triple.func, triple.args      <span class="c"># (mul, (3,))</span></pre></div>
+</div>
+<div class="two keep" style="margin-top:6px">
+<p><b>Keyword arguments</b> are saved the same way. Saved positional arguments always go <b>first</b>, so to fix a later argument, save it by keyword.</p>
+<div class="stack"><pre>binary = partial(int, base=2)
+binary('1010')    <span class="c"># int('1010', base=2) → 10</span></pre><pre>picture = partial(tag, 'img', class_='pic-frame')
+picture(src='wumpus.jpeg')
+<span class="c"># tag('img', class_='pic-frame', src='wumpus.jpeg')</span></pre></div>
 </div>
 </section>
 

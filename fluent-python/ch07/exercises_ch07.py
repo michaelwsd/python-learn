@@ -16,15 +16,16 @@ from operator import itemgetter, mul
 # apply_twice(f, x) -> f(f(x))
 #   apply_twice(lambda n: n + 3, 10) -> 16
 def apply_twice(f, x):
-    raise NotImplementedError
+    return f(f(x))
 
 
 # compose(f, g) -> a NEW function h such that h(x) == f(g(x))
 #   inc_then_double = compose(lambda n: n * 2, lambda n: n + 1)
 #   inc_then_double(5) -> 12
 def compose(f, g):
-    raise NotImplementedError
-
+    def h(x):
+        return f(g(x))
+    return h
 
 # Exercise 2: key functions
 # ---------------------------------------------------------------------------
@@ -33,7 +34,7 @@ def compose(f, g):
 #   rhyme_sort(["apple", "fig", "banana"]) -> ["banana", "apple", "fig"]
 # One line: sorted() with a lambda as the key.
 def rhyme_sort(words):
-    raise NotImplementedError
+    return sorted(words, key=lambda x: x[::-1])
 
 
 # Exercise 3: reduce with the operator module
@@ -41,7 +42,7 @@ def rhyme_sort(words):
 # product(nums) -> the product of all numbers; product([]) -> 1
 # Use reduce and operator.mul (no lambda). Hint: reduce takes an initial value.
 def product(nums):
-    raise NotImplementedError
+    return reduce(mul, nums, 1)
 
 
 # Exercise 4: a user-defined callable
@@ -52,7 +53,12 @@ def product(nums):
 #   sq(3) -> 9;  sq(4) -> 16;  sq.calls -> 2;  callable(sq) -> True
 class CallCounter:
     def __init__(self, func):
-        raise NotImplementedError
+        self.func = func 
+        self.calls = 0
+
+    def __call__(self, *args, **kwargs):
+        self.calls += 1
+        return self.func(*args, **kwargs)
 
 
 # Exercise 5: keyword-only parameters
@@ -63,8 +69,13 @@ class CallCounter:
 #   connect("db", 5432, 5)   -> TypeError
 #   connect("db")            -> TypeError
 # Write the signature yourself.
-def connect():
-    raise NotImplementedError
+def connect(host, port=5432, *, timeout, retries=3):
+    return {
+        "host": host,
+        "port": port,
+        "timeout": timeout,
+        "retries": retries
+    }
 
 
 # Exercise 6: positional-only parameters
@@ -73,8 +84,8 @@ def connect():
 #   clamp(15, 0, 10) -> 10;  clamp(-3, 0, 10) -> 0;  clamp(4, 0, 10) -> 4
 # All three must be positional-only: clamp(value=4, low=0, high=10) -> TypeError
 # Write the signature yourself.
-def clamp():
-    raise NotImplementedError
+def clamp(value, low, high, /):
+    return max(low, min(value, high))
 
 
 # Exercise 7: itemgetter for sorting records
@@ -85,7 +96,7 @@ def clamp():
 #   sort_by(trades, 0, 2) -> sorted by symbol, then quantity
 # Use operator.itemgetter as the key (no lambda).
 def sort_by(records, *fields):
-    raise NotImplementedError
+    return sorted(records, key=itemgetter(*fields))
 
 
 # Exercise 8: freezing arguments with partial
@@ -94,4 +105,4 @@ def sort_by(records, *fields):
 #   triple = make_multiplier(3);  triple(7) -> 21
 # Use partial and operator.mul.
 def make_multiplier(n):
-    raise NotImplementedError
+    return partial(mul, n)
