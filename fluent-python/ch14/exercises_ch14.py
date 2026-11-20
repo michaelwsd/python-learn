@@ -27,7 +27,8 @@ class Order:
 
 class LimitOrder(Order):
     def __init__(self, symbol, qty, price):
-        raise NotImplementedError
+        super().__init__(symbol, qty)
+        self.price = price
 
     def notional(self):
         return self.qty * self.price
@@ -42,9 +43,11 @@ class LimitOrder(Order):
 #   book.update(MSFT=-5)        -> ValueError  (update)
 # Override ONLY __setitem__. Choose the base class so that the constructor
 # and update() go through your __setitem__ without overriding them.
-class PriceBook(dict):  # <- is this the right base class?
+class PriceBook(UserDict):  # <- is this the right base class?
     def __setitem__(self, key, value):
-        raise NotImplementedError
+        if value <= 0:
+            raise ValueError()
+        super().__setitem__(key, value)
 
 
 # Exercise 3: cooperative multiple inheritance and the MRO
@@ -63,21 +66,25 @@ class Handler:
 
 class AuthMixin:
     def handle(self, msg):
-        raise NotImplementedError
+        lst = super().handle(msg)
+        lst.insert(0, "Auth")
+        return lst 
 
 
 class LogMixin:
     def handle(self, msg):
-        raise NotImplementedError
+        lst = super().handle(msg)
+        lst.insert(0, "Log")
+        return lst 
 
 
-class AuthLogService:  # <- add the base classes
+class AuthLogService(AuthMixin, LogMixin, Handler):  # <- add the base classes
     """Auth, then Log, then Handler"""
 
 
-class LogAuthService:  # <- add the base classes
+class LogAuthService(LogMixin, AuthMixin, Handler):  # <- add the base classes
     """Log, then Auth, then Handler"""
-
+    
 
 # Exercise 4: write a mixin
 # ---------------------------------------------------------------------------
@@ -98,19 +105,19 @@ def _upper(key):
 
 class UpperKeyMixin:
     def __setitem__(self, key, value):
-        raise NotImplementedError
+        super().__setitem__(_upper(key), value)
 
     def __getitem__(self, key):
-        raise NotImplementedError
+        return super().__getitem__(_upper(key))
 
     def __contains__(self, key):
-        raise NotImplementedError
+        return super().__contains__(_upper(key))
 
     def get(self, key, default=None):
-        raise NotImplementedError
+        return super().get(_upper(key), default=0)
 
 
-class SymbolDict:  # <- add the base classes
+class SymbolDict(UpperKeyMixin, UserDict):  # <- add the base classes
     """Case-insensitive symbol -> value mapping"""
 
 
@@ -128,16 +135,20 @@ class SymbolDict:  # <- add the base classes
 # pop() and peek() on an empty stack raise IndexError("empty stack").
 class Stack:
     def __init__(self):
-        raise NotImplementedError
+        self._stack = []
 
     def push(self, item):
-        raise NotImplementedError
+        self._stack.append(item)
 
     def pop(self):
-        raise NotImplementedError
+        if not self._stack:
+            raise IndexError("empty stack")
+        return self._stack.pop(-1)
 
     def peek(self):
-        raise NotImplementedError
+        if not self._stack:
+            raise IndexError("empty stack")
+        return None if not self._stack else self._stack[-1]
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self._stack)

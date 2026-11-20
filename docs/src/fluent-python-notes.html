@@ -99,10 +99,10 @@
   .abc b { display: block; font-size: 9.4pt; }
   .abc i { font-family: Menlo, monospace; font-size: 8pt; }
   .abc small { display: block; color: var(--muted); font-size: 7.8pt; }
-  .ch2 h3, .ch3 h3, .ch6 h3, .ch7 h3, .ch8 h3 { margin: 8px 0 4px; }
-  .ch2 p, .ch3 p, .ch6 p, .ch7 p, .ch8 p { margin: 3px 0; }
-  .ch2 .two, .ch3 .two, .ch6 .two, .ch7 .two, .ch8 .two { gap: 8px; }
-  .ch2 table, .ch3 table, .ch6 table, .ch7 table, .ch8 table { margin: 4px 0; }
+  .ch2 h3, .ch3 h3, .ch6 h3, .ch7 h3, .ch8 h3, .ch14 h3 { margin: 8px 0 4px; }
+  .ch2 p, .ch3 p, .ch6 p, .ch7 p, .ch8 p, .ch14 p { margin: 3px 0; }
+  .ch2 .two, .ch3 .two, .ch6 .two, .ch7 .two, .ch8 .two, .ch14 .two { gap: 8px; }
+  .ch2 table, .ch3 table, .ch6 table, .ch7 table, .ch8 table, .ch14 table { margin: 4px 0; }
   .ch3 > *, .ch6 > *, .ch7 > * { margin-top: 0; margin-bottom: 0; }
   .ch3 > h3, .ch6 > h3, .ch7 > h3 { margin: 14px 0 6px; }
   .ch3 > .meta, .ch6 > .meta, .ch7 > .meta { margin-bottom: 8px; }
@@ -160,6 +160,7 @@
     <div class="ci"><span class="cn">6</span><div><b>Object References, Mutability, and Recycling</b><span>Variables as labels · assignment runs right to left · <code>is</code> vs <code>==</code> · relative immutability of tuples · shallow vs deep copies · mutable defaults · defensive copying · del and garbage collection</span></div></div>
     <div class="ci"><span class="cn">7</span><div><b>Functions as First-Class Objects</b><span>Functions as objects · higher-order functions · <code>map</code>, <code>filter</code>, <code>reduce</code> · lazy iterators · callables and <code>__call__</code> · parameter kinds · <code>operator</code> · <code>partial</code></span></div></div>
     <div class="ci"><span class="cn">8</span><div><b>Type Hints in Functions</b><span>Gradual typing · duck vs nominal typing · what mypy does</span></div></div>
+    <div class="ci"><span class="cn">14</span><div><b>Inheritance: For Better or for Worse</b><span><code>super()</code> · the MRO · mixins · aggregate classes · composition · <code>@final</code></span></div></div>
   </nav>
 </header>
 
@@ -1403,6 +1404,154 @@ update(show_hex)   <span class="c"># error: hex(23.5) would fail</span></pre>
 def qty(s: str) -> int:
     if s.isdigit(): return int(s)
     fail(s)   <span class="c"># OK; with -> None: "Missing return"</span></pre>
+</div>
+</div>
+</section>
+
+<!-- ======================= CHAPTER 14 ======================= -->
+<section class="ch ch14">
+<div class="sec" style="zoom:1.18">
+<h2><span class="n">14</span>Inheritance: For Better or for Worse</h2>
+<p class="meta">Book pages 487-518 · code in <code>fluent-python/ch14/</code></p>
+<div class="lead"><b>Inheritance is a sharp tool:</b> use it for interfaces (ABCs) and small mixins. To reuse code from a concrete class, prefer composition.</div>
+
+<h3>What <code>super()</code> Does</h3>
+<div class="two keep">
+<div><p><code>super()</code> means <b>the next class in the MRO</b>, not "my parent".</p>
+<p>An override usually still needs the parent's version. <code>super().method(...)</code> calls it, so the override only <b>adds</b> its extra work.</p></div>
+<pre>class LastUpdatedOrderedDict(OrderedDict):
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self.move_to_end(key)  <span class="c"># the extra work</span></pre>
+</div>
+<div class="two keep">
+<div><p>Python <b>never calls the parent's <code>__init__</code> for you</b>. Call it first, then do the subclass's own setup.</p></div>
+<pre>class NamedPoint(Point):
+    def __init__(self, x, y, name):
+        super().__init__(x, y)   <span class="c"># sets x, y</span>
+        self.name = name</pre>
+</div>
+</div>
+
+<div class="sec" style="zoom:1.18">
+<h3>The MRO and When It Is Used</h3>
+<div class="two keep">
+<div><p>The <b>MRO</b> (method resolution order) is one ordered list of classes, in <code>Cls.__mro__</code>. Python searches it left to right <b>every time it looks up a method</b>, and <b>every time <code>super()</code> runs</b>.</p>
+<p>Two rules set the order: a subclass comes <b>before its bases</b>, and bases keep <b>the order you wrote them in</b>. So <code>Root</code> appears once, after both <code>A</code> and <code>B</code>.</p></div>
+<pre>class Root: ...
+class A(Root): ...
+class B(Root): ...
+class Leaf(A, B): ...
+
+Leaf.__mro__
+<span class="c"># (Leaf, A, B, Root, object)</span></pre>
+</div>
+<div class="two keep">
+<div><p><b>Only one method runs by default:</b> the first one found. Each <code>super()</code> call passes control to the <b>next class in the MRO of <code>self</code>'s class</b>, so <code>A</code>'s <code>super()</code> goes to <code>B</code>, not <code>Root</code>.</p>
+<p>A method that calls <code>super()</code> is <b>cooperative</b>. One that doesn't stops the chain: here <code>Root.pong</code> never runs.</p></div>
+<pre>class Leaf(A, B):
+    def ping(self):       <span class="c"># Leaf has no pong</span>
+        print('Leaf')
+        super().ping()
+
+<span class="c"># every class's ping calls super().ping()</span>
+Leaf().ping()   <span class="c"># Leaf, A, B, Root</span>
+
+<span class="c"># no Leaf.pong, so A.pong runs first;</span>
+<span class="c"># it calls super(), but B.pong doesn't</span>
+Leaf().pong()   <span class="c"># A, B</span></pre>
+</div>
+<div class="two keep">
+<div><p>Where <code>super()</code> goes depends on the class you combine it into. <code>U</code>'s base is <code>object</code>, so alone it fails, but in <code>LeafUA</code> the next class is <code>A</code>.</p></div>
+<pre>class U:
+    def ping(self):
+        super().ping()
+
+U().ping()         <span class="c"># AttributeError</span>
+class LeafUA(U, A): ...
+LeafUA().ping()    <span class="c"># U, A, Root</span></pre>
+</div>
+</div>
+
+<div class="sec pb" style="zoom:1.06">
+<h3>What a Mixin Is and When to Use It</h3>
+<div class="two keep">
+<div><p>A <b>mixin</b> is a small class that adds <b>one behaviour</b> to other classes through multiple inheritance. It isn't used on its own, usually has <b>no base class</b>, and relies on the class after it in the MRO.</p>
+<p>The common kind changes something, then passes the call on with <code>super()</code>. It has no storage of its own.</p></div>
+<pre>class UpperCaseMixin:
+    def __setitem__(self, key, item):
+        super().__setitem__(_upper(key), item)
+
+    def __getitem__(self, key):
+        return super().__getitem__(_upper(key))
+
+    def __contains__(self, key):
+        return super().__contains__(_upper(key))</pre>
+</div>
+<div class="two keep">
+<div><p><b>Put the mixin first</b>, so its methods are found before the real class's. Listed second, <code>UserDict.__setitem__</code> is found first, and the mixin silently never runs.</p>
+<p>A class whose body is just a docstring, combining mixins into something ready to use, is an <b>aggregate class</b>.</p></div>
+<div class="stack"><pre>class UpperDict(UpperCaseMixin, UserDict):
+    """Case-insensitive dict"""
+
+d = UpperDict(a=1)
+'A' in d, d['a']    <span class="c"># (True, 1)</span></pre><pre>class Wrong(UserDict, UpperCaseMixin): ...
+dict(Wrong(a=1))    <span class="c"># {'a': 1}</span></pre></div>
+</div>
+<div class="two keep">
+<div><p><b>Use one</b> when the same small behaviour is needed by several unrelated classes. The standard library's threaded servers are a mixin plus a real class: <code>ThreadingMixIn</code> overrides only <code>process_request</code>, to start a thread per request.</p>
+<p>Name it <code>...Mixin</code>, so readers know it doesn't stand alone.</p></div>
+<pre>class ThreadingHTTPServer(ThreadingMixIn,
+                          HTTPServer):
+    daemon_threads = True
+
+ThreadingHTTPServer.__mro__
+<span class="c"># (ThreadingHTTPServer, ThreadingMixIn,</span>
+<span class="c">#  HTTPServer, TCPServer, BaseServer, object)</span></pre>
+</div>
+</div>
+
+<div class="sec" style="zoom:1.06">
+<h3>Practical Rules for Inheritance</h3>
+<div class="two keep">
+<div><p><b>1. Favor composition over inheritance.</b> <b>Hold</b> an object and delegate to it, instead of <b>being</b> one. You choose the interface, and there is no MRO to reason about.</p></div>
+<div class="stack"><pre>class Stack(list):     <span class="c"># IS-A list</span>
+    def push(self, item): self.append(item)
+
+s = Stack(); s.push(1)
+s.insert(0, 99)        <span class="c"># allowed: breaks LIFO</span></pre><pre>class Stack:           <span class="c"># HAS-A list</span>
+    def __init__(self): self._items = []
+    def push(self, item):
+        self._items.append(item)
+    def pop(self): return self._items.pop()</pre></div>
+</div>
+<div class="two keep">
+<div><p><b>2. Know why you inherit.</b> <b>Interface</b> inheritance makes a subtype ("is-a"). <b>Implementation</b> inheritance only reuses code: use composition or a mixin instead.</p>
+<p><b>3. Make interfaces explicit with ABCs.</b> They also give you methods for free: write the 5 abstract ones of <code>MutableMapping</code>, and inherit <code>get</code>, <code>update</code>, <code>pop</code>...</p>
+<p><b>4. Use explicit mixins for code reuse</b>, each doing one thing, named <code>...Mixin</code>.</p>
+<p><b>5. Provide aggregate classes</b>, so users don't have to get the order of the bases right.</p></div>
+<pre>class Book(MutableMapping):
+    def __getitem__(self, k): ...
+    def __setitem__(self, k, v): ...
+    def __delitem__(self, k): ...
+    def __iter__(self): ...
+    def __len__(self): ...
+
+b = Book()
+b.update(a=1); b.get('a')   <span class="c"># free from the ABC</span></pre>
+</div>
+<div class="two keep">
+<div><p><b>6. Subclass only classes designed for it</b>, whose docs say what to override (<code>UserDict</code>, the ABCs). Authors can forbid it with <code>@final</code>, which only mypy checks.</p>
+<p><b>7. Avoid subclassing concrete classes.</b> You'd depend on their internal state and details. "All non-leaf classes should be abstract."</p></div>
+<pre>@final
+class Engine: ...
+class Turbo(Engine): ...  <span class="c"># mypy: error</span>
+
+class Base:
+    @final
+    def check(self) -> None: ...
+class Child(Base):
+    def check(self) -> None: ...  <span class="c"># error</span></pre>
 </div>
 </div>
 </section>
