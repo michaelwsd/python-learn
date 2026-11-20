@@ -4,6 +4,8 @@
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
     --no-pdf-header-footer --print-to-pdf=docs/fluent-python-notes.pdf docs/src/fluent-python-notes.html
   To add a chapter: add a .ci line to the contents, then copy a <section class="ch"> block.
+  Each section (an h3 and its content) sits in a <div class="sec">, which is never split across
+  pages. Spacing comes from the .sec CSS rules, not inline margins.
 -->
 <html lang="en">
 <head>
@@ -21,7 +23,7 @@
     --ok: #1d7a3a; --bad: #b3261e;
   }
   * { box-sizing: border-box; }
-  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; zoom: .84; } /* everything prints at 84% */
   body { margin: 0; color: var(--ink); background: #fff; font: 9.6pt/1.45 -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif; }
   code { font-family: Menlo, "SF Mono", Consolas, monospace; font-size: 8.6pt; background: var(--soft); border: 1px solid var(--line); border-radius: 3px; padding: 0 3px; white-space: nowrap; }
   pre { margin: 6px 0; padding: 8px 10px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px;
@@ -54,7 +56,6 @@
   .cn { width: 28px; height: 28px; border-radius: 6px; color: #fff; background: var(--py); font-weight: 700; display: grid; place-items: center; font-size: 11pt; }
 
   /* Chapters */
-  section.ch { break-before: page; }
   h2 { font-size: 15pt; margin: 0 0 4px; padding: 5px 10px; border-radius: 6px; color: #fff; background: var(--py); }
   h2 .n { opacity: .75; font-weight: 500; margin-right: 6px; }
   .meta { color: var(--muted); font-size: 8.8pt; margin: 0 0 8px; }
@@ -121,6 +122,27 @@
   ol { margin: 4px 0; }
   .abc.mid { background: var(--py-soft); width: 46%; margin: 0 auto; }
   .arrow { text-align: center; color: var(--muted); font-size: 8pt; line-height: 1; }
+  .tree.big { gap: 8px; margin: 4px 0; }
+  .tree.big .row { gap: 10px; }
+  .tree.big .abc { padding: 7px 6px; border-radius: 7px; }
+  .tree.big .abc b { font-size: 10.4pt; margin-bottom: 1px; }
+  .tree.big .abc i { font-size: 8.6pt; }
+  .tree.big .abc small { font-size: 8.2pt; line-height: 1.45; }
+  .tree.big .arrow { font-size: 8.4pt; }
+  /* Sections: each .sec (heading + its content) is never split across pages; if it doesn't fit,
+     it moves to the next page. Spacing is the same everywhere: 8px between rows,
+     6px under a heading, 22px between sections. */
+  section.ch { break-before: page; }  /* every chapter starts on a new page */
+  .sec { break-inside: avoid; }
+  .sec.pb { break-before: page; }  /* a section that starts a new page */
+  /* Sections on pages with spare room carry style="zoom:N": the largest size that still fits
+     the page with no code line wrapping (found by measuring in Chrome). */
+  .sec + .sec { margin-top: 22px; }
+  .sec > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+  .sec > * + * { margin-top: 8px !important; }
+  .sec > h3:not(:first-child) { margin-top: 22px !important; }
+  .sec > h3 + * { margin-top: 6px !important; }
+  .sec > h2 + .meta { margin-top: 4px !important; }
 </style>
 </head>
 <body>
@@ -142,6 +164,7 @@
 
 <!-- ======================= CHAPTER 1 ======================= -->
 <section class="ch">
+<div class="sec" style="zoom:1.14">
 <h2><span class="n">1</span>The Python Data Model</h2>
 <p class="meta">Book pages 3-20 · code in <code>fluent-python/ch01/</code></p>
 
@@ -174,7 +197,7 @@ random.choice(deck)  <span class="c"># stdlib works too</span></pre>
 </div>
 <p>Rule: Python calls special methods, <b>you don't</b>. Write <code>len(x)</code>, never <code>x.__len__()</code>.</p>
 
-<h3>Why <code>len()</code> is fast for built-in types</h3>
+<h3>Why <code>len()</code> Is Fast for Built-In Types</h3>
 <div class="two keep w">
 <ol>
   <li>Python itself is written in C. The standard Python you run is called <b>CPython</b>. Every Python object, such as a list, is a block of memory laid out as a C <b>struct</b>: a fixed record with named fields.</li>
@@ -193,7 +216,8 @@ len(MyList)  0.22s</pre></div>
 </div>
 </div>
 <p>This is why <code>len</code> is a <b>function</b>, not a method: one syntax for everything, with a fast path for built-ins.</p>
-
+</div>
+<div class="sec" style="zoom:1.14">
 <h3><code>__repr__</code> vs <code>__str__</code></h3>
 <p><code>__repr__</code> is for <b>developers</b>: it should show exactly what the object is, ideally looking like the code that recreates it. <code>__str__</code> is for <b>end users</b>: it just has to be readable. <code>print()</code> calls <code>str()</code>, which uses <code>__str__</code>; if a class has no <code>__str__</code>, it uses <code>__repr__</code> instead. So <b>if you write only one, write <code>__repr__</code></b>.</p>
 <div class="two keep">
@@ -216,8 +240,9 @@ len(MyList)  0.22s</pre></div>
 '42' 42          <span class="c"># str vs int: clear</span></pre>
 </div>
 <p>That's why the chapter's Vector uses <code>!r</code>: <code>f"Vector({self.x!r}, {self.y!r})"</code>.</p>
-
-<h3 class="newpage">Truthiness: <code>bool(x)</code></h3>
+</div>
+<div class="sec pb" style="zoom:1.16">
+<h3>Truthiness: <code>bool(x)</code></h3>
 <div class="two keep">
 <div>
 <p><code>bool()</code>, <code>if x:</code> and <code>while x:</code> check, in order:</p>
@@ -238,11 +263,12 @@ def __bool__(self):
 <span class="c"># bool(3) runs int's __bool__, not</span>
 <span class="c"># Vector's: no recursion.</span></pre></div>
 </div>
-
+</div>
+<div class="sec" style="zoom:1.16">
 <h3>The Collection API</h3>
 <p><code>Collection</code> combines <code>Iterable</code> (<code>__iter__</code>), <code>Sized</code> (<code>__len__</code>) and <code>Container</code> (<code>__contains__</code>) by <b>multiple inheritance</b>: <code>class Collection(Sized, Iterable, Container)</code>. Together these define what a collection is: something you can <b>loop over, measure and search</b>. The three main kinds, <code>Sequence</code>, <code>Mapping</code> and <code>Set</code>, are each a Collection with extra methods of their own. The ABCs (abstract base classes, in <code>collections.abc</code>) mark the core methods as <b>required</b> and provide the rest <b>for free</b>, built from those.</p>
 
-<div class="tree">
+<div class="tree big">
   <div class="row r3">
     <div class="abc"><b>Iterable</b><i>__iter__</i><small>loop over: for x in c</small></div>
     <div class="abc"><b>Sized</b><i>__len__</i><small>measure: len(c)</small></div>
@@ -283,8 +309,9 @@ abstract method '__getitem__'</pre>
 <p>FrenchDeck doesn't inherit from <code>Sequence</code>, yet <code>in</code>, <code>for</code> and <code>reversed</code> still work through Python's fallbacks to <code>__getitem__</code>. Inheriting adds <code>index</code>/<code>count</code> and makes <code>isinstance(deck, Sequence)</code> True.</p>
 </div>
 </div>
-
-<h3 class="newpage">Common special methods</h3>
+</div>
+<div class="sec pb" style="zoom:1.18">
+<h3>Common Special Methods</h3>
 <p>Each method is called <b>by Python</b> when you use the syntax in the right-hand column. Implement only the ones that make sense for your object.</p>
 <div class="ref2">
 <div>
@@ -344,10 +371,12 @@ abstract method '__getitem__'</pre>
   <li>Define <code>__eq__</code> → decide on <code>__hash__</code>: hash the same fields, or stay unhashable if mutable.</li>
   <li>Never call them directly: write <code>len(x)</code>, not <code>x.__len__()</code>. Exception: <code>super().__init__()</code>.</li>
 </ol></div>
+</div>
 </section>
 
 <!-- ======================= CHAPTER 2 ======================= -->
 <section class="ch ch2">
+<div class="sec" style="zoom:1.12">
 <h2><span class="n">2</span>An Array of Sequences</h2>
 <p class="meta">Book pages 21-76 · code in <code>fluent-python/ch02/</code></p>
 
@@ -390,8 +419,9 @@ abstract method '__getitem__'</pre>
 list.__mro__   <span class="c"># (list, object)</span></pre>
 </div>
 </div>
-
-<h3>Comprehensions, generator expressions and the walrus</h3>
+</div>
+<div class="sec" style="zoom:1.12">
+<h3>Comprehensions, Generator Expressions and the Walrus</h3>
 <div class="two keep">
 <p><b>Generator expressions</b> are written in parentheses and save memory: items are produced one at a time, on demand. As a sole argument, they need no extra parentheses.</p>
 <div class="stack"><pre><span class="c"># listcomp: builds the whole list</span>
@@ -406,7 +436,8 @@ tuple(ord(s) for s in symbols)</pre></div>
     process(chunk)</pre><pre>[p for l in lines
    if (p := parse(l)) is not None]</pre></div>
 </div>
-
+</div>
+<div class="sec" style="zoom:1.12">
 <h3>Tuples</h3>
 <div class="two keep">
 <div>
@@ -421,9 +452,11 @@ b[-1].append(99)   <span class="c"># OK: list inside changes</span>
 b[-1] = [5]        <span class="c"># TypeError</span>
 hash(b)            <span class="c"># TypeError</span></pre></div>
 </div>
-
+</div>
+<div class="sec pb" style="zoom:1.14">
+<h3>Why Tuples Are Faster and Smaller</h3>
 <table class="keep">
-<thead><tr><th style="width:4%">#</th><th style="width:58%">Why tuples are faster and smaller</th><th>Evidence (Python 3.12)</th></tr></thead>
+<thead><tr><th style="width:4%">#</th><th style="width:58%">Reason</th><th>Evidence (Python 3.12)</th></tr></thead>
 <tbody>
 <tr><td>1</td><td>A tuple literal is built <b>once, at compile time</b>, and every call hands back the same tuple. A list must be rebuilt on each call.</td><td><code>(10, 20)</code> → <code>RETURN_CONST</code><br>5M calls: 0.06s vs 0.10s</td></tr>
 <tr><td>2</td><td><b>Copying a tuple returns the original</b>: a copy of something that can't change is pointless.</td><td><code>tuple(t) is t</code> → True<br><code>list(l) is l</code> → False</td></tr>
@@ -431,8 +464,9 @@ hash(b)            <span class="c"># TypeError</span></pre></div>
 <tr><td>4</td><td>A tuple stores the references to its items <b>inside its own block</b>. A list stores one pointer to a separate block of references; when the list resizes, that block is replaced by a bigger one and the pointer updated, while the list object never moves. So reaching an item takes <b>one more step</b> in a list.</td><td><code>tuple → item</code><br><code>list → array → item</code></td></tr>
 </tbody>
 </table>
-
-<h3>Pattern matching sequences: <code>match</code>/<code>case</code></h3>
+</div>
+<div class="sec" style="zoom:1.14">
+<h3>Pattern Matching Sequences: <code>match</code>/<code>case</code></h3>
 <p><code>match</code>/<code>case</code> checks the <b>shape</b> of a sequence and pulls it apart in one step. The pattern looks like the data it matches. Cases are tried top to bottom; the first match wins.</p>
 <div class="two keep t">
 <table class="nw">
@@ -460,7 +494,8 @@ hash(b)            <span class="c"># TypeError</span></pre></div>
 <p class="muted"><code>str</code>, <code>bytes</code> and iterators never match sequence patterns. Use <code>match tuple(s):</code> or <code>match list(it):</code>.</p>
 </div>
 </div>
-
+</div>
+<div class="sec" style="zoom:1.14">
 <h3>Slicing</h3>
 <div class="two keep">
 <div>
@@ -496,8 +531,9 @@ b[0, ...]      <span class="c"># 3D: same as b[0, :, :]</span></pre></div>
 </tbody>
 </table>
 </div>
-
-<h3>When a list is not the answer</h3>
+</div>
+<div class="sec pb" style="zoom:1.18">
+<h3>When a List Is Not the Answer</h3>
 <table class="keep">
 <thead><tr><th style="width:36%">You need</th><th style="width:19%">Use</th><th>Why</th></tr></thead>
 <tbody>
@@ -510,8 +546,9 @@ b[0, ...]      <span class="c"># 3D: same as b[0, :, :]</span></pre></div>
 <tr><td>Slice huge binary data without copying</td><td><code>memoryview</code></td><td>a window onto the same bytes</td></tr>
 </tbody>
 </table>
-
-<h3 style="margin-top:16px">Threads, the GIL and asyncio <span class="extra">Extra · not in the chapter</span></h3>
+</div>
+<div class="sec" style="zoom:1.18">
+<h3 style="margin-top:16px">Threads, the GIL and <code>asyncio</code> <span class="extra">Extra · not in the chapter</span></h3>
 <div class="two keep" style="grid-template-columns:minmax(0,1fr) auto;gap:20px">
 <div>
 <p><b>Concurrency</b>: several jobs are in progress at once, and the CPU switches between them.</p>
@@ -545,16 +582,18 @@ T4    █···· waiting ····
 </tbody>
 </table>
 <p class="muted">Each thread runs at most one event loop: usually one in the main thread, with <code>asyncio.to_thread(func)</code> for blocking calls. Python 3.13+ has an optional GIL-free build (PEP 703).</p>
+</div>
 </section>
 
 <!-- ======================= CHAPTER 3 ======================= -->
 <section class="ch ch3">
+<div class="sec" style="zoom:1.18">
 <h2><span class="n">3</span>Dictionaries and Sets</h2>
 <p class="meta">Book pages 77-114 · code in <code>fluent-python/ch03/</code></p>
 
 <div class="lead">Dicts are everywhere: module namespaces, <code>obj.__dict__</code> and keyword arguments are all dicts. <code>dict</code>, <code>set</code> and <code>frozenset</code> are <b>hash tables</b>: lookups are fast, and <b>keys must be hashable</b>.</div>
 
-<h3>Modern dict syntax</h3>
+<h3>Modern <code>dict</code> Syntax</h3>
 <div class="two keep">
 <div>
 <p><b>Dict comprehensions</b> build <code>key: value</code> pairs, optionally sorted and filtered.</p>
@@ -570,8 +609,9 @@ T4    █···· waiting ····
 <span class="c"># {'a': 0, 'x': 4}   later x wins</span></pre><pre>config = defaults | user_settings <span class="c"># new dict</span>
 d1 |= d2                          <span class="c"># in place</span></pre></div>
 </div>
-
-<h3>Pattern matching with mappings</h3>
+</div>
+<div class="sec" style="zoom:1.18">
+<h3>Pattern Matching with Mappings</h3>
 <div class="two keep">
 <div class="stack"><pre>match record:
     case {'type': 'book', 'api': 2,
@@ -595,8 +635,9 @@ d1 |= d2                          <span class="c"># in place</span></pre></div>
 <p><b>For records:</b> include a <b>type</b> field and a <b>schema version</b> field, and add a case for <b>invalid records of a known type</b> plus a catch-all.</p>
 </div>
 </div>
-
-<h3>What is hashable</h3>
+</div>
+<div class="sec" style="zoom:1.18">
+<h3>What Is Hashable</h3>
 <div class="two keep">
 <div>
 <p>Hashable means: the <b>hash never changes</b> (<code>__hash__</code>), the object supports <code>==</code> (<code>__eq__</code>), and <b>equal objects have equal hashes</b>. A dict finds keys by hash first, so equal keys with different hashes would never be found.</p>
@@ -617,7 +658,8 @@ d1 |= d2                          <span class="c"># in place</span></pre></div>
 hash((1, 2, [30, 40]))   <span class="c"># TypeError: 'list'</span></pre><pre>{1: 'a', 1.0: 'b'}       <span class="c"># {1: 'b'}: 1 == 1.0</span></pre></div>
 </div>
 </div>
-
+</div>
+<div class="sec pb">
 <h3>Mapping ABCs, <code>dict</code> and <code>UserDict</code></h3>
 <div class="two keep">
 <div>
@@ -643,8 +685,9 @@ U(UserDict): {'1': 'a', '2': 'b', '3': 'c'} <span class="ok">✓</span></pre>
 <p class="muted">Write to <code>self.data</code>, not <code>self</code>, or it recurses.</p>
 </div>
 </div>
-
-<h3>Missing keys: <code>__missing__</code> and <code>defaultdict</code></h3>
+</div>
+<div class="sec">
+<h3>Missing Keys: <code>__missing__</code> and <code>defaultdict</code></h3>
 <div class="two keep">
 <div>
 <p>When <code>d[k]</code> misses, <code>dict.__getitem__</code> calls <code>__missing__(k)</code> if the subclass defines it, instead of raising <code>KeyError</code>.</p>
@@ -664,8 +707,9 @@ U(UserDict): {'1': 'a', '2': 'b', '3': 'c'} <span class="ok">✓</span></pre>
 <tr><td><code>Mapping</code></td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c yes">✓</td><td>nothing, if <code>__getitem__</code> calls it (all use <code>self[k]</code>)</td></tr>
 </tbody>
 </table></div>
-
-<h3>Variations of dict</h3>
+</div>
+<div class="sec">
+<h3>Variations of <code>dict</code></h3>
 <table class="var">
 <thead><tr><th style="width:15%">Type</th><th style="width:50%">Demo</th><th>Use when</th></tr></thead>
 <tbody>
@@ -697,8 +741,9 @@ with shelve.open('db') as db:
         self.data[str(key)] = item</pre></td><td><b>Building your own mapping</b>: only meant to be subclassed. Constructor and <code>update</code> go through your <code>__setitem__</code>.</td></tr>
 </tbody>
 </table>
-
-<h3>Immutable mappings: <code>MappingProxyType</code></h3>
+</div>
+<div class="sec pb" style="zoom:1.18">
+<h3>Immutable Mappings: <code>MappingProxyType</code></h3>
 <div class="two keep">
 <div>
 <p><code>types.MappingProxyType(d)</code> wraps a dict in a <b>read-only, live proxy</b>:</p>
@@ -719,8 +764,9 @@ d_proxy           <span class="c"># ...{1: 'A', 2: 'B'}</span></pre><pre>class B
         self.pins = MappingProxyType(
             self._pins)          <span class="c"># public</span></pre></div>
 </div>
-
-<h3>Practical consequences of how <code>dict</code> works</h3>
+</div>
+<div class="sec" style="zoom:1.18">
+<h3>Practical Consequences of How <code>dict</code> Works</h3>
 <p>A dict is a hash table: <code>hash(key)</code> picks a slot, and <code>==</code> confirms the key: no scanning. Timings are for 1M lookups.</p>
 <table class="keep">
 <thead><tr><th style="width:25%">Consequence</th><th>Why</th><th style="width:34%">Evidence (3.12)</th></tr></thead>
@@ -735,8 +781,9 @@ p1    [1, 2]       <span class="c"># p1.__dict__ values: p1's own array</span>
 p2    [5, 9]       <span class="c"># p2.__dict__ values: p2's own array</span></pre></td></tr>
 </tbody>
 </table>
-
-<h3>Set theory</h3>
+</div>
+<div class="sec" style="zoom:1.18">
+<h3>Set Theory</h3>
 <div class="two keep">
 <div>
 <p>A set is a collection of <b>unique</b> objects: <code>set</code> is mutable, <code>frozenset</code> immutable. Basic use: removing duplicates (<code>dict.fromkeys</code> also keeps first-seen order).</p>
@@ -760,8 +807,9 @@ a.intersection([3, 9])  <span class="c"># {3}: any iterable</span></pre></div>
 <p><b>Like dicts</b> (both are hash tables): elements must be hashable, <code>x in s</code> is fast at any size, and memory use is high.</p>
 <p><b>Unlike dicts: no order.</b> Elements are placed by hash, and adding more can rearrange them. For unique <b>and</b> ordered, use <code>dict.fromkeys</code>.</p>
 </div>
-
-<h3>Set operations</h3>
+</div>
+<div class="sec pb" style="zoom:1.15">
+<h3>Set Operations</h3>
 <div class="two keep">
 <div>
 <div class="tree" style="margin:2px 0 6px">
@@ -801,17 +849,19 @@ d1.keys() &amp; d2.keys()  <span class="c"># {'b', 'c'}</span>
 d1.keys() - d2.keys()  <span class="c"># {'a'}</span>
 {'a', 'z'} - d1.keys() <span class="c"># {'z'}: missing</span></pre>
 </div>
+</div>
 </section>
 
 
 <!-- ======================= CHAPTER 6 ======================= -->
 <section class="ch ch6">
+<div class="sec" style="zoom:1.12">
 <h2><span class="n">6</span>Object References, Mutability, and Recycling</h2>
 <p class="meta">Book pages 201-230 · code in <code>fluent-python/ch06/</code></p>
 
 <div class="lead">A <b>name is not the object</b>: a variable is a label that refers to an object.</div>
 
-<h3>Variables are labels, not boxes</h3>
+<h3>Variables Are Labels, Not Boxes</h3>
 <div class="two keep">
 <div>
 <p><code>b = a</code> <b>copies nothing</b>: it sticks a second label on the object <code>a</code> already refers to. Two names for one object are <b>aliases</b>.</p>
@@ -824,15 +874,17 @@ b               <span class="c"># [1, 2, 3, 4]</span>
 a = [9]         <span class="c"># rebind a only</span>
 b               <span class="c"># [1, 2, 3, 4]</span></pre>
 </div>
-
-<h3>Assignment happens right to left</h3>
+</div>
+<div class="sec" style="zoom:1.12">
+<h3>Assignment Happens Right to Left</h3>
 <div class="two keep">
 <p>The right side runs <b>first</b> and creates or finds the object; only then is the name on the left <b>bound</b> to it. If the right side fails, the name is never created.</p>
 <pre>y = Gizmo() * 10
 <span class="c"># a Gizmo IS created, then * raises TypeError</span>
 'y' in globals()   <span class="c"># False: y never bound</span></pre>
 </div>
-
+</div>
+<div class="sec" style="zoom:1.12">
 <h3><code>is</code> vs <code>==</code></h3>
 <div class="two keep">
 <div>
@@ -855,8 +907,9 @@ END = object()       <span class="c"># sentinel</span>
 if node is END: ...</pre><pre>int('1000') is int('1000')  <span class="c"># False</span>
 int('1000') == int('1000')  <span class="c"># True</span></pre></div>
 </div>
-
-<h3>Tuples hold fixed references</h3>
+</div>
+<div class="sec" style="zoom:1.12">
+<h3>Tuples Hold Fixed References</h3>
 <div class="two keep">
 <p>A tuple stores <b>references</b>. Immutable means those references never change, but a <b>mutable object it refers to can</b>. So the identity of its items is fixed, while its value may change. This is why a tuple holding a list is unhashable, and behind the Ch 2 <code>+=</code> puzzler.</p>
 <pre>t1 = (1, 2, [30, 40])
@@ -866,8 +919,9 @@ t1[-1].append(99)    <span class="c"># same list, new value</span>
 t1                   <span class="c"># (1, 2, [30, 40, 99])</span>
 t1 == t2             <span class="c"># False</span></pre>
 </div>
-
-<h3>Shallow vs deep copies</h3>
+</div>
+<div class="sec" style="zoom:1.12">
+<h3>Shallow vs Deep Copies</h3>
 <div class="two keep">
 <div>
 <p><b>Shallow</b> (<code>list(a)</code>, <code>a[:]</code>, <code>a.copy()</code>, <code>copy.copy(a)</code>, the default): a new <b>outer</b> container holding the <b>same items</b>. Fine if the items are immutable; a shared mutable item changes in both.</p>
@@ -880,8 +934,9 @@ a[1].append(4)        <span class="c"># change the inner list</span>
 s                     <span class="c"># [1, [2, 3, 4]] shared</span>
 d                     <span class="c"># [1, [2, 3]]    own</span></pre>
 </div>
-
-<h3 class="newpage">Mutable defaults and defensive copying</h3>
+</div>
+<div class="sec pb" style="zoom:1.15">
+<h3>Mutable Defaults and Defensive Copying</h3>
 <div class="two keep">
 <div>
 <p><b>Never use a mutable default.</b> A default value is made <b>only once</b>, not on every call. Every call that skips the argument gets <b>the same list</b>, so what one call adds is still there in the next.</p>
@@ -905,8 +960,9 @@ Bus(team).passengers.remove('Tina')
 team                <span class="c"># ['Sue']  changed too!</span>
 <span class="c"># GOOD: self.passengers = list(passengers)</span></pre>
 </div>
-
-<h3><code>del</code> and garbage collection</h3>
+</div>
+<div class="sec" style="zoom:1.15">
+<h3><code>del</code> and Garbage Collection</h3>
 <div class="two keep">
 <div>
 <p><b><code>del x</code> deletes the name, not the object.</b> The object lives while any name still refers to it; rebinding the last name frees it too.</p>
@@ -922,15 +978,17 @@ y.other = x  <span class="c"># y → x: a cycle</span>
 del x, y     <span class="c"># counts stay at 1...</span>
 gc.collect() <span class="c"># ...gc frees them</span></pre></div>
 </div>
+</div>
 </section>
 
 
 <!-- ======================= CHAPTER 7 ======================= -->
 <section class="ch ch7">
+<div class="sec">
 <h2><span class="n">7</span>Functions as First-Class Objects</h2>
 <p class="meta">Book pages 231-252 · code in <code>fluent-python/ch07/</code></p>
 
-<h3>Functions are objects</h3>
+<h3>Functions Are Objects</h3>
 <div class="two keep">
 <div>
 <p>In Python, every function is a <b>first-class object</b>: it can be created at runtime, assigned to a variable or stored in a data structure, passed as an argument, and returned from a function.</p>
@@ -966,8 +1024,9 @@ def make_adder(n):
     return add
 make_adder(5)(10)   <span class="c"># 15</span></pre>
 </div>
-
-<h3>Higher-order functions</h3>
+</div>
+<div class="sec">
+<h3>Higher-Order Functions</h3>
 <div class="two keep">
 <p>A <b>higher-order function</b> takes a function as an argument or returns one as output, like <code>sorted</code>, <code>max</code> and <code>min</code> with <code>key=</code>. Any one-argument function works as a key.</p>
 <pre>sorted(fruits, key=len)
@@ -991,7 +1050,8 @@ next(m)                     <span class="c"># computes 1 now</span>
 list(m)                     <span class="c"># [4, 9]: the rest</span>
 list(m)                     <span class="c"># []: used up</span></pre>
 </div>
-
+</div>
+<div class="sec">
 <h3>Callables</h3>
 <div class="keep">
 <div class="two">
@@ -1016,8 +1076,9 @@ add(10)     <span class="c"># 15: remembered the 5</span>
 add.total   <span class="c"># 15</span></pre>
 </div>
 </div>
-
-<h3>Parameter kinds: <code>/</code> and <code>*</code></h3>
+</div>
+<div class="sec pb">
+<h3>Parameter Kinds: <code>/</code> and <code>*</code></h3>
 <div class="keep">
 <pre>def f(pos_only, /, normal, *args, kw_only, **kwargs):
       └──┬───┘     └─┬──┘  └─┬─┘  └──┬──┘  └──┬───┘
@@ -1038,8 +1099,9 @@ order('pizza', 2, 'cheese', True)  <span class="c"># True goes into extras: gift
 f(1, 2, 3, b=4)   <span class="c"># args=(2, 3)</span></pre><pre>def g(a, *, b): ...
 g(1, 2, b=4)      <span class="c"># TypeError</span></pre></div>
 </div>
-
-<h3 style="margin-top:24px">Functional programming: <code>operator</code> and <code>functools.partial</code></h3>
+</div>
+<div class="sec">
+<h3 style="margin-top:24px">Functional Programming: <code>operator</code> and <code>functools.partial</code></h3>
 <p class="keep" style="margin-bottom:6px">In a <b>functional</b> style you build programs by passing functions to other functions. These two modules supply ready-made small functions, so you rarely need to write a <code>lambda</code>.</p>
 <div class="two keep">
 <p><code>operator</code> gives a <b>function for each operator</b>: <code>add</code>, <code>mul</code>, <code>eq</code>, <code>getitem</code>... Operators like <code>*</code> are syntax, so they can't be passed; <code>mul</code> can.</p>
@@ -1070,6 +1132,7 @@ list(map(triple, [1, 2, 3]))  <span class="c"># [3, 6, 9]</span></pre><pre>tripl
 binary('1010')    <span class="c"># int('1010', base=2) → 10</span></pre><pre>picture = partial(tag, 'img', class_='pic-frame')
 picture(src='wumpus.jpeg')
 <span class="c"># tag('img', class_='pic-frame', src='wumpus.jpeg')</span></pre></div>
+</div>
 </div>
 </section>
 
