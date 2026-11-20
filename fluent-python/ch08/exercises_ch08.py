@@ -11,7 +11,7 @@ See the raw mypy output with:  cd ch08 && uv run mypy --strict exercises_ch08.py
 
 Write the hints yourself: add imports from typing / collections.abc as needed.
 """
-
+from typing import Iterable, Sequence, Protocol, Any, TypeVar, Callable, Mapping, NoReturn
 
 # Exercise 1: Optional parameter (Example 8-3)
 # ---------------------------------------------------------------------------
@@ -35,8 +35,8 @@ def show_count(count: int, singular: str, plural: str | None = None) -> str:
 #   word_lengths(["ab", "c"]) -> {"ab": 2, "c": 1}
 # It must accept ANY iterable of str (list, tuple, generator), and its return
 # type must be a concrete dict type.
-def word_lengths(words):
-    raise NotImplementedError
+def word_lengths(words: Iterable[str]) -> dict[str, int]:
+    return {word: len(word) for word in words}
 
 
 # Exercise 3: tuples as records, type alias
@@ -44,8 +44,9 @@ def word_lengths(words):
 # midpoint(a, b) -> the point halfway between two (x, y) points
 #   midpoint((0.0, 0.0), (2.0, 4.0)) -> (1.0, 2.0)
 # Define a type alias Point for a 2-float tuple and use it for all three hints.
-def midpoint(a, b):
-    raise NotImplementedError
+Point = tuple[float, float]
+def midpoint(a: Point, b: Point) -> Point:
+    return (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
 
 
 # Exercise 4: TypeVar
@@ -53,8 +54,11 @@ def midpoint(a, b):
 # first(items) -> the first item of a sequence; raise ValueError if it is empty
 # The return type must follow the input: a list of int gives an int,
 # a str gives a str. Hint: Sequence[T].
-def first(items):
-    raise NotImplementedError
+def first[T](items: Sequence[T]) -> T:
+    if not items:
+        raise ValueError()
+    else:
+        return items[0]
 
 
 # Exercise 5: Protocol + bounded TypeVar (Examples 8-20, 8-21)
@@ -64,8 +68,13 @@ def first(items):
 # It must accept any type that supports <, including a class that only
 # defines __lt__, and return that same type. objects without < must be
 # rejected by mypy. Define a SupportsLessThan Protocol and a TypeVar bound to it.
-def largest(items):
-    raise NotImplementedError
+class SupportsLessThan(Protocol):
+    def __lt__(self, other: Any) -> bool: ...
+
+LT = TypeVar("LT", bound=SupportsLessThan)
+
+def largest(items: Iterable[LT]) -> LT:
+    return max(items)
 
 
 # Exercise 6: Callable and Mapping
@@ -76,8 +85,19 @@ def largest(items):
 #   best_symbol(prices, lambda a, b: a < b) -> "NVDA"  (cheapest)
 # Raise ValueError if prices is empty. prices is only read, never changed,
 # so accept any read-only mapping, not just dict.
-def best_symbol(prices, better):
-    raise NotImplementedError
+def best_symbol(prices: Mapping[str, float], better: Callable[[float, float], bool]) -> str:
+    if not prices:
+        raise ValueError()
+
+    items = iter(prices.items())
+
+    best_symbol, best_price = next(items)
+    for symbol, price in items:
+        if better(price, best_price):
+            best_price, best_symbol = price, symbol
+
+    return best_symbol
+    
 
 
 # Exercise 7: annotating positional-only and variadic parameters
@@ -87,8 +107,10 @@ def best_symbol(prices, better):
 #   make_url("https://x.com", "api", "v1") -> "https://x.com/api/v1"
 #   make_url("https://x.com", "q", page="2") -> "https://x.com/q?page=2"
 # All path parts and query values must be str.
-def make_url():
-    raise NotImplementedError
+def make_url(base: str, /, *path: str, **query: str) -> str:
+    paths = '/'.join([base, *path])
+    queries = '&'.join([f'{key}={val}' for key, val in query.items()])
+    return paths + "?" + queries if queries else paths
 
 
 # Exercise 8: NoReturn
@@ -98,9 +120,12 @@ def make_url():
 #   anything else: call fail(f"unknown side: {side}")
 # With the right return hint on fail, mypy knows parse_side can't fall off
 # the end without returning a str.
-def fail(msg):
-    raise NotImplementedError
+def fail(msg: str) -> NoReturn:
+    raise ValueError(msg)
 
 
-def parse_side(side):
-    raise NotImplementedError
+def parse_side(side: str) -> str:
+    if side.strip().lower() not in ['buy', 'sell']:
+        fail(f"unknown side: {side}")
+
+    return side.strip().upper()
