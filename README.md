@@ -11,7 +11,6 @@ Preparation notes and practice projects on modern Python tooling, Kubernetes and
 | [`fluent-python/`](fluent-python/) | Working through *Fluent Python* (2nd ed.): a demo, exercises and pytest tests per chapter. Roadmap in [`fluent-python/README.md`](fluent-python/README.md) |
 | [`docs/`](docs/) | Study notes as PDFs: [`imc-notes.pdf`](docs/imc-notes.pdf), [`fluent-python-notes.pdf`](docs/fluent-python-notes.pdf) (chapter-by-chapter notes) and [`k8s-layers.pdf`](docs/k8s-layers.pdf) (how Kubernetes fits together). HTML sources in [`docs/src/`](docs/src/) |
 | [`python-basics/`](python-basics/) | Jupyter notebooks from a Python fundamentals course, with my exercise work |
-| [`configs/`](configs/) | My global `CLAUDE.md` and VS Code settings, keybindings and extension list |
 
 ## Quick start
 
